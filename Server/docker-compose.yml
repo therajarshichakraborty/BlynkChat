@@ -1,0 +1,59 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blynkchat-server
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      NODE_ENV: development
+      MONGODB_URI: mongodb://admin:password@mongodb:27017/cohort?authSource=admin
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+      - redis
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - blynkchat-network
+
+  mongodb:
+    image: mongo:7.0
+    container_name: blynkchat-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: cohort
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - blynkchat-network
+
+  redis:
+    image: redis:alpine
+    container_name: blynkchat-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - blynkchat-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  blynkchat-network:
+    driver: bridge
