@@ -10,9 +10,7 @@ import {
 import { z } from "zod";
 import { usersTable } from "./user.schema";
 
-/**
- * PostgreSQL Notifications Table Definition for BlynkChat
- */
+
 export const notificationsTable = pgTable(
   "notifications", {
     id: uuid("id").defaultRandom().primaryKey(),
