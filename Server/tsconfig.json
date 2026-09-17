@@ -24,12 +24,12 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "baseUrl": ".",
+    "baseUrl": "",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["*"]
     },
-    "outDir": "./dist",
-    "rootDir": "./"
+    "outDir": "dist",
+    "rootDir": ""
   },
   "include": ["**/*.ts", "types/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
