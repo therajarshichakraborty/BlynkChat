@@ -14,8 +14,7 @@ import { usersTable } from "./user.schema";
  * PostgreSQL Notifications Table Definition for BlynkChat
  */
 export const notificationsTable = pgTable(
-  "notifications",
-  {
+  "notifications", {
     id: uuid("id").defaultRandom().primaryKey(),
     userId: uuid("user_id")
       .references(() => usersTable.id, { onDelete: "cascade" })

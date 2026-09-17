@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch ./server.ts",
-    "build": "tsc && cp ./package.json ./dist",
+    "build": "bun build ./server.ts --outfile dist/server.js",
     "start": "bun ./dist/server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

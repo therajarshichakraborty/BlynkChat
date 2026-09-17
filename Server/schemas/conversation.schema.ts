@@ -10,12 +10,8 @@ import {
 import { z } from "zod";
 import { usersTable } from "./user.schema";
 
-/**
- * PostgreSQL Conversations (Chats) Table Definition for BlynkChat
- */
 export const conversationsTable = pgTable(
-  "conversations",
-  {
+  "conversations", {
     id: uuid("id").defaultRandom().primaryKey(),
     isGroup: boolean("is_group").default(false).notNull(),
     groupName: varchar("group_name", { length: 255 }),
@@ -40,37 +36,34 @@ export const conversationsTable = pgTable(
   ]
 );
 
-// Backward-compatible aliases
 export const conversationTable = conversationsTable;
 export const chatsTable = conversationsTable;
 export const chatTable = conversationsTable;
 export const conversations = conversationsTable;
 
-// Inferred TypeScript Types
 export type Conversation = typeof conversationsTable.$inferSelect;
 export type NewConversation = typeof conversationsTable.$inferInsert;
 export type ConversationTable = Conversation;
 export type Chat = Conversation;
 export type NewChat = NewConversation;
 
-// Zod Validation Schemas
 export const createDirectConversationSchema = z.object({
-  recipientId: z.string().uuid("Invalid recipient user ID"),
+  recipientId: z.uuid("Invalid recipient user ID"),
 });
 
 export const createGroupConversationSchema = z.object({
   groupName: z.string().min(1, "Group name is required").max(100),
   groupDescription: z.string().max(500).optional().nullable(),
-  groupAvatar: z.string().url("Invalid avatar URL").optional().nullable(),
+  groupAvatar: z.url("Invalid avatar URL").optional().nullable(),
   memberIds: z
-    .array(z.string().uuid("Invalid user ID"))
+    .array(z.uuid("Invalid user ID"))
     .min(1, "At least one member is required"),
 });
 
 export const updateGroupConversationSchema = z.object({
   groupName: z.string().min(1).max(100).optional(),
   groupDescription: z.string().max(500).optional().nullable(),
-  groupAvatar: z.string().url().optional().nullable(),
+  groupAvatar: z.url().optional().nullable(),
 });
 
 export default conversationsTable;
