@@ -1,44 +1,16 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import "./globals.css";
-import { Nanum_Pen_Script } from "next/font/google";
-import { ThemeProvider } from "@/providers/theme-providers";
-import { AnimatedThemeToggler } from "@/components/animated-theme-toggler";
-
-export const nanumPenScript = Nanum_Pen_Script({
-  subsets: ["latin"],
-  variable: "--font-nanum-pen",
-  weight: "400",
-});
 
 export const metadata: Metadata = {
-  title: "IntelliCode-X",
-  description: "Your NextGeneration WorkFlow Management Application",
+  title: "Relay",
+  description: "Real-time chats, group rooms and communities in one fast app.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html
-      lang='en'
-      className={`${nanumPenScript.variable} h-full antialiased`}
-      suppressHydrationWarning
-    >
-      <body className='min-h-full flex flex-col'>
-        <ThemeProvider
-          attribute='class'
-          defaultTheme='system'
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className='absolute top-4 right-4'>
-            <AnimatedThemeToggler />
-          </div>
-          {children}
-        </ThemeProvider>
-      </body>
+    <html lang="en">
+      <body>{children}</body>
     </html>
   );
 }
