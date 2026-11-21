@@ -5,11 +5,16 @@
   "description": "Relay is a real-time chat app for 1:1 chats, groups, rooms and communities on mobile, tablet and desktop.",
   "scripts": {
     "dev": "next dev -p 4040",
-    "build": "next build",
-    "start": "next start",
+    "build": "prisma generate && next build",
+    "start": "next start -p 4040",
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "next typegen && tsc --noEmit",
-    "check": "bun run typecheck && bun run lint && bun run build"
+    "typecheck": "prisma generate && next typegen && tsc --noEmit",
+    "check": "bun run typecheck && bun run lint && bun run build",
+    "db:up": "docker compose up -d",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",
