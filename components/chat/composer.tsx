@@ -7,8 +7,8 @@ import { PlusIcon } from "@/components/icons/plus-icon";
 import { SendIcon } from "@/components/icons/send-icon";
 import { SmileIcon } from "@/components/icons/smile-icon";
 import { IconButton } from "@/components/ui/icon-button";
-import { EmojiPicker } from "./emoji-picker";
 import { messageBodyLimit } from "@/lib/validation/messages";
+import { EmojiPicker } from "./emoji-picker";
 
 type ComposerProps = {
   placeholder: string;
@@ -18,8 +18,10 @@ type ComposerProps = {
   onCancel?: () => void;
   onTyping?: () => void;
   attachments?: ReactNode;
-  tools?: ReactNode;
+  leading?: ReactNode;
+  trailing?: ReactNode;
   canSendEmpty?: boolean;
+  busy?: boolean;
   inputId?: string;
 };
 
@@ -31,15 +33,17 @@ export function Composer({
   onCancel,
   onTyping,
   attachments,
-  tools,
+  leading,
+  trailing,
   canSendEmpty = false,
+  busy = false,
   inputId = "composer-input",
 }: ComposerProps) {
   const [value, setValue] = useState(initialValue);
   const empty = value.trim().length === 0 && !canSendEmpty;
 
   function submit() {
-    if (empty) return;
+    if (empty || busy) return;
     onSend(value.trim());
     setValue("");
   }
@@ -68,7 +72,7 @@ export function Composer({
       {banner}
       {attachments}
       <div className="flex items-end gap-1 p-1.5 md:gap-1.5 md:p-2">
-        {tools ?? (
+        {leading ?? (
           <IconButton label="Add attachment" className="max-sm:hidden">
             <PlusIcon size={20} />
           </IconButton>
@@ -90,15 +94,15 @@ export function Composer({
           placeholder={placeholder}
           className="field-sizing-content max-h-40 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-2 py-2.5 text-md leading-5 outline-none"
         />
-        {tools ? null : (
+        <EmojiPicker
+          label="Emoji"
+          icon={<SmileIcon size={20} />}
+          onPick={(emoji) => setValue((current) => `${current}${emoji}`)}
+          align="end"
+          buttonClassName="size-10"
+        />
+        {trailing ?? (
           <>
-            <EmojiPicker
-              label="Emoji"
-              icon={<SmileIcon size={20} />}
-              onPick={(emoji) => setValue((current) => `${current}${emoji}`)}
-              align="end"
-              buttonClassName="size-10"
-            />
             <IconButton label="Attach file" className="max-sm:hidden">
               <PaperclipIcon size={20} />
             </IconButton>
@@ -107,7 +111,7 @@ export function Composer({
             </IconButton>
           </>
         )}
-        <IconButton type="submit" label="Send message" variant="accent" disabled={empty}>
+        <IconButton type="submit" label="Send message" variant="accent" disabled={empty || busy}>
           <SendIcon size={18} />
         </IconButton>
       </div>
