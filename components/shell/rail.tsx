@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import Link from "next/link";
 import { GlobeIcon } from "@/components/icons/globe-icon";
 import { HashIcon } from "@/components/icons/hash-icon";
@@ -9,13 +10,15 @@ import { UsersIcon } from "@/components/icons/users-icon";
 import { Avatar } from "@/components/ui/avatar";
 import { LogoMark } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { getUnreadTotal } from "@/lib/data/chats";
-import { getCurrentUser } from "@/lib/data/users";
-import { roomHref } from "@/lib/utils/community-links";
+import type { PersonView } from "@/types/conversation";
 import { NavLink } from "./nav-link";
 
-export function Rail() {
-  const user = getCurrentUser();
+type RailProps = {
+  me: PersonView;
+  roomsHref: string;
+};
+
+export function Rail({ me: user, roomsHref }: RailProps) {
 
   return (
     <nav
@@ -25,12 +28,12 @@ export function Rail() {
       <Link href="/" aria-label="Relay home" className="mb-4 rounded-lg">
         <LogoMark />
       </Link>
-      <NavLink href="/chats" match="/chats" label="Chats" variant="rail" badge={getUnreadTotal()}>
+      <NavLink href="/chats" match="/chats" label="Chats" variant="rail" liveUnread>
         <MessageCircleIcon size={22} />
       </NavLink>
       <NavLink
-        href={roomHref("design-engineers")}
-        match="/communities/design-engineers"
+        href={roomsHref as Route}
+        match={roomsHref.split("/").slice(0, 3).join("/")}
         label="Rooms"
         variant="rail"
       >
@@ -50,7 +53,7 @@ export function Rail() {
       >
         <PhoneIcon size={22} />
       </span>
-      <NavLink href="/chats?filter=starred" match="/starred" label="Starred" variant="rail">
+      <NavLink href="/starred" match="/starred" label="Starred" variant="rail">
         <StarIcon size={22} />
       </NavLink>
       <div className="mt-auto flex flex-col items-center gap-2">
@@ -59,7 +62,7 @@ export function Rail() {
           <SettingsIcon size={22} />
         </NavLink>
         <Link href="/settings" aria-label={`${user.name}, profile settings`} className="mt-1 rounded-full">
-          <Avatar initials={user.initials} tone={user.tone} size="md" online />
+          <Avatar initials={user.initials} tone={user.tone} image={user.image} size="md" online />
         </Link>
       </div>
     </nav>

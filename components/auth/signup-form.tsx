@@ -4,14 +4,11 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import { PasswordField } from "@/components/ui/password-field";
 import { TextField } from "@/components/ui/text-field";
-import { signUp } from "@/lib/data/auth";
+import { authClient } from "@/lib/auth-client";
+import { signUpErrorMessage } from "@/lib/auth-errors";
 import { afterAuthRoute } from "@/lib/site";
-import {
-  hasErrors,
-  validateSignup,
-  type FieldErrors,
-  type SignupValues,
-} from "@/lib/validation/auth";
+import { signupSchema, type SignupValues } from "@/lib/validation/auth";
+import { collectFieldErrors, type FieldErrors } from "@/lib/validation/form";
 import { FormAlert } from "./form-alert";
 import { SubmitButton } from "./submit-button";
 
@@ -36,17 +33,26 @@ export function SignupForm() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const nextErrors = validateSignup(values);
-    setErrors(nextErrors);
     setFormError("");
-    if (hasErrors(nextErrors)) return;
+    const parsed = signupSchema.safeParse(values);
+    if (!parsed.success) {
+      setErrors(collectFieldErrors(parsed.error));
+      return;
+    }
+    setErrors({});
+    const { username, email, password } = parsed.data;
     startTransition(async () => {
-      const result = await signUp(values);
-      if (result.ok) {
-        router.push(afterAuthRoute);
-      } else {
-        setFormError(result.error);
+      const { error } = await authClient.signUp.email({ email, password, name: username, username });
+      if (error) {
+        if (error.code === "USERNAME_IS_ALREADY_TAKEN") {
+          setErrors({ username: signUpErrorMessage(error) });
+        } else {
+          setFormError(signUpErrorMessage(error));
+        }
+        return;
       }
+      router.replace(afterAuthRoute);
+      router.refresh();
     });
   }
 

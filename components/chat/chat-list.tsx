@@ -1,65 +1,132 @@
 "use client";
 
 import type { Route } from "next";
-import {
-  usePathname,
-  useRouter,
-  useSearchParams,
-  useSelectedLayoutSegment,
-} from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { startTransition, useEffect, useRef, useState, useTransition } from "react";
 import { PinIcon } from "@/components/icons/pin-icon";
 import { SearchIcon } from "@/components/icons/search-icon";
 import { EmptyState } from "@/components/ui/empty-state";
-import { chatListQuery, filterChats, parseChatFilter } from "@/lib/utils/chat-filters";
-import type { Chat } from "@/types/chat";
-import type { User } from "@/types/user";
+import { loadChatList } from "@/lib/actions/chats";
+import { useTypingMap } from "@/lib/hooks/use-typing-map";
+import { useRealtime } from "@/lib/realtime-client";
+import { typingLabel } from "@/lib/utils/typing";
+import { chatListQuery } from "@/lib/utils/chat-filters";
+import { cn } from "@/lib/utils/cn";
+import type { ChatFilter, ChatSummary } from "@/types/conversation";
 import { ChatFilters } from "./chat-filters";
 import { ChatListHeader } from "./chat-list-header";
 import { ChatListItem } from "./chat-list-item";
 import { ChatSearch } from "./chat-search";
-import { StoryStrip } from "./story-strip";
 
 type ChatListProps = {
-  chats: Chat[];
+  chats: ChatSummary[];
+  filter: ChatFilter;
+  query: string;
   unreadCount: number;
-  me: User;
-  stories: User[];
+  activeId: string | null;
+  meId: string;
 };
 
-export function ChatList({ chats, unreadCount, me, stories }: ChatListProps) {
+const refreshEvents = new Set(["message.created", "message.deleted", "conversation.updated", "member.changed"]);
+
+export function ChatList({ chats: initialChats, filter, query: initialQuery, unreadCount: initialUnread, activeId, meId }: ChatListProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const activeId = useSelectedLayoutSegment();
-  const filter = parseChatFilter(searchParams.get("filter"));
-  const [query, setQuery] = useState(searchParams.get("q") ?? "");
+  const [query, setQuery] = useState(initialQuery);
+  const [searching, startSearch] = useTransition();
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const search = chatListQuery(filter, query);
-  const visible = filterChats(chats, filter, query);
-  const grouped = filter === "all" && !query.trim();
-  const pinned = grouped ? visible.filter((chat) => chat.pinned) : [];
-  const rest = grouped ? visible.filter((chat) => !chat.pinned) : visible;
+  const refreshTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [source, setSource] = useState(initialChats);
+  const [live, setLive] = useState({ chats: initialChats, unread: initialUnread });
+  if (source !== initialChats) {
+    setSource(initialChats);
+    setLive({ chats: initialChats, unread: initialUnread });
+  }
+  const { chats: listed, unread: unreadCount } = live;
+  const typing = useTypingMap();
+  const [onlineOverrides, setOnlineOverrides] = useState<Record<string, boolean>>({});
+  const chats = listed.map((chat) =>
+    chat.peerId && chat.peerId in onlineOverrides ? { ...chat, online: onlineOverrides[chat.peerId] ?? chat.online } : chat,
+  );
+
+  useEffect(
+    () => () => {
+      clearTimeout(timer.current);
+      clearTimeout(refreshTimer.current);
+    },
+    [],
+  );
+
+  useRealtime((event) => {
+    if (event.type === "typing") {
+      typing.add(event.data.conversationId, event.data);
+      return;
+    }
+    if (event.type === "presence") {
+      setOnlineOverrides((current) => ({ ...current, [event.data.userId]: event.data.online }));
+      return;
+    }
+    if (event.type === "message.created" && event.data.senderId) {
+      typing.remove(event.data.conversationId, event.data.senderId);
+    }
+    const relevant =
+      refreshEvents.has(event.type) ||
+      (event.type === "receipt.updated" && event.data.userId === meId) ||
+      (event.type === "message.updated" && chats.some((chat) => chat.id === event.data.conversationId));
+    if (!relevant) return;
+    if (event.type === "message.created" && event.data.threadRootId) return;
+    clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(() => {
+      startTransition(async () => {
+        const result = await loadChatList({ filter, query: initialQuery });
+        if (result.ok) {
+          startTransition(() => {
+            setLive(result.data);
+            setOnlineOverrides({});
+          });
+        }
+      });
+    }, 250);
+  });
+
+  const search = chatListQuery(filter, initialQuery);
+  const grouped = filter === "all" && !initialQuery.trim();
+  const pinned = grouped ? chats.filter((chat) => chat.pinned) : [];
+  const rest = grouped ? chats.filter((chat) => !chat.pinned) : chats;
 
   function handleQuery(value: string) {
     setQuery(value);
-    router.replace(`${pathname}${chatListQuery(filter, value)}` as Route, { scroll: false });
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      startSearch(() => {
+        router.replace(`${pathname}${chatListQuery(filter, value)}` as Route, { scroll: false });
+      });
+    }, 250);
   }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-col gap-3 px-4 pt-4 pb-3 md:pt-5">
-        <ChatListHeader filter={filter} pathname={pathname} query={query} />
+        <ChatListHeader filter={filter} pathname={pathname} query={initialQuery} />
         <ChatSearch value={query} onChange={handleQuery} />
-        <StoryStrip me={me} people={stories} />
-        <ChatFilters pathname={pathname} active={filter} query={query} unreadCount={unreadCount} />
+        <ChatFilters pathname={pathname} active={filter} query={initialQuery} unreadCount={unreadCount} />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4">
-        {visible.length === 0 ? (
+      <div
+        className={cn("min-h-0 flex-1 overflow-y-auto px-2 pb-4 transition-opacity duration-150", searching && "opacity-60")}
+        aria-busy={searching}
+      >
+        {chats.length === 0 ? (
           <EmptyState
             icon={<SearchIcon size={22} />}
-            title="No chats found"
-            description={query ? `Nothing matches “${query}”.` : "No chats in this view yet."}
+            title={initialQuery ? "No chats found" : filter === "archived" ? "Nothing archived" : "No chats yet"}
+            description={
+              initialQuery
+                ? `Nothing matches “${initialQuery}”.`
+                : filter === "all"
+                  ? "Start a conversation from the new chat button."
+                  : "No chats in this view yet."
+            }
             className="py-12"
           />
         ) : (
@@ -75,7 +142,13 @@ export function ChatList({ chats, unreadCount, me, stories }: ChatListProps) {
                 </h2>
                 <ul className="flex flex-col gap-0.5">
                   {pinned.map((chat) => (
-                    <ChatListItem key={chat.id} chat={chat} active={chat.id === activeId} search={search} />
+                    <ChatListItem
+                      key={chat.id}
+                      chat={chat}
+                      active={chat.id === activeId}
+                      search={search}
+                      typingLabel={typingLabel(typing.map[chat.id] ?? [], chat.kind === "direct") || undefined}
+                    />
                   ))}
                 </ul>
               </section>
@@ -84,16 +157,22 @@ export function ChatList({ chats, unreadCount, me, stories }: ChatListProps) {
               <h2
                 id="all-heading"
                 className={
-                  grouped
+                  grouped && pinned.length > 0
                     ? "px-3 pt-1 pb-1.5 text-2xs font-semibold tracking-wider text-muted uppercase"
                     : "sr-only"
                 }
               >
-                {grouped ? "All messages" : `${visible.length} results`}
+                {grouped ? "All messages" : `${chats.length} results`}
               </h2>
               <ul className="flex flex-col gap-0.5">
                 {rest.map((chat) => (
-                  <ChatListItem key={chat.id} chat={chat} active={chat.id === activeId} search={search} />
+                  <ChatListItem
+                      key={chat.id}
+                      chat={chat}
+                      active={chat.id === activeId}
+                      search={search}
+                      typingLabel={typingLabel(typing.map[chat.id] ?? [], chat.kind === "direct") || undefined}
+                    />
                 ))}
               </ul>
             </section>

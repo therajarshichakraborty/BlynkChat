@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CommunitiesSidebar } from "@/components/community/communities-sidebar";
 import { CommunityCard } from "@/components/community/community-card";
 import { CommunityListItem } from "@/components/community/community-list-item";
+import { CreateCommunityButton } from "@/components/community/create-community-button";
 import { ExploreHero } from "@/components/community/explore-hero";
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { SearchIcon } from "@/components/icons/search-icon";
@@ -13,6 +14,7 @@ import {
   searchCommunities,
 } from "@/lib/data/communities";
 import { communityCategories, exploreHref, parseCategory } from "@/lib/utils/community-links";
+import { requireUser } from "@/lib/server/session";
 
 export const metadata: Metadata = {
   title: "Explore communities",
@@ -24,18 +26,22 @@ type CommunitiesPageProps = {
 };
 
 export default async function CommunitiesPage({ searchParams }: CommunitiesPageProps) {
+  const user = await requireUser();
   const params = await searchParams;
   const category = parseCategory(params.category);
   const query = params.q?.trim() ?? "";
-  const results = searchCommunities(category, query);
-  const joined = getJoinedCommunities();
+  const [results, joined, featured] = await Promise.all([
+    searchCommunities(user.id, category, query),
+    getJoinedCommunities(user.id),
+    getFeaturedCommunities(user.id),
+  ]);
 
   return (
     <>
       <CommunitiesSidebar joined={joined} query={query} />
       <main id="main" className="min-w-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-5 md:px-8 md:py-8">
-          <ExploreHero featured={getFeaturedCommunities()} query={query} />
+          <ExploreHero featured={featured} query={query} />
           <section aria-labelledby="joined-mobile" className="lg:hidden">
             <h2 id="joined-mobile" className="px-1 pb-2 text-2xs font-semibold tracking-wider text-muted uppercase">
               Your communities
@@ -45,6 +51,7 @@ export default async function CommunitiesPage({ searchParams }: CommunitiesPageP
                 <CommunityListItem key={community.id} community={community} />
               ))}
             </ul>
+            <CreateCommunityButton className="mt-3 h-9" />
           </section>
           <section aria-labelledby="directory-title" className="flex flex-col gap-5">
             <h2 id="directory-title" className="sr-only">

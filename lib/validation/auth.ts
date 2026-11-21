@@ -1,65 +1,59 @@
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+import { z } from "zod";
 
-export type LoginValues = {
-  email: string;
-  password: string;
-};
+export const usernameRules = { min: 3, max: 20, pattern: /^[a-z0-9_]+$/ };
 
-export type FieldErrors<T> = Partial<Record<keyof T, string>>;
+export const usernameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(usernameRules.min, "Use 3 to 20 characters.")
+  .max(usernameRules.max, "Use 3 to 20 characters.")
+  .regex(usernameRules.pattern, "Use lowercase letters, numbers and underscores only.");
+
+export const emailSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter your email address.")
+  .pipe(z.email("Enter a valid email address."));
+
+export const passwordSchema = z
+  .string()
+  .min(8, "Use at least 8 characters.")
+  .max(128, "Use at most 128 characters.")
+  .regex(/[a-z]/i, "Include at least one letter and one number.")
+  .regex(/\d/, "Include at least one letter and one number.");
+
+export const loginSchema = z.object({
+  identifier: z.string().trim().min(1, "Enter your email or username."),
+  password: z.string().min(1, "Enter your password."),
+});
+
+export const signupSchema = z
+  .object({
+    username: usernameSchema,
+    email: emailSchema,
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Confirm your password."),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match.",
+  });
+
+export const resetPasswordSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Confirm your password."),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match.",
+  });
+
+export type LoginValues = z.input<typeof loginSchema>;
+export type ResetPasswordValues = z.input<typeof resetPasswordSchema>;
+export type SignupValues = z.input<typeof signupSchema>;
 
 export function isEmail(value: string) {
-  return emailPattern.test(value.trim());
-}
-
-function validateEmail(value: string) {
-  if (!value.trim()) return "Enter your email address.";
-  if (!isEmail(value)) return "Enter a valid email address.";
-  return undefined;
-}
-
-function validatePassword(value: string) {
-  if (value.length < 8) return "Use at least 8 characters.";
-  if (!/[a-z]/i.test(value) || !/\d/.test(value)) return "Include at least one letter and one number.";
-  return undefined;
-}
-
-export function validateLogin(values: LoginValues): FieldErrors<LoginValues> {
-  const errors: FieldErrors<LoginValues> = {};
-  const email = validateEmail(values.email);
-  if (email) errors.email = email;
-  if (!values.password) errors.password = "Enter your password.";
-  return errors;
-}
-
-export type SignupValues = {
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
-
-export function validateUsername(value: string) {
-  if (value.length < 3 || value.length > 20) return "Use 3 to 20 characters.";
-  if (!/^[a-z0-9_]+$/.test(value)) return "Use lowercase letters, numbers and underscores only.";
-  return undefined;
-}
-
-export function validateSignup(values: SignupValues): FieldErrors<SignupValues> {
-  const errors: FieldErrors<SignupValues> = {};
-  const username = validateUsername(values.username);
-  const email = validateEmail(values.email);
-  const password = validatePassword(values.password);
-  if (username) errors.username = username;
-  if (email) errors.email = email;
-  if (password) errors.password = password;
-  if (!values.confirmPassword) {
-    errors.confirmPassword = "Confirm your password.";
-  } else if (values.confirmPassword !== values.password) {
-    errors.confirmPassword = "Passwords do not match.";
-  }
-  return errors;
-}
-
-export function hasErrors<T>(errors: FieldErrors<T>) {
-  return Object.values(errors).some(Boolean);
+  return emailSchema.safeParse(value).success;
 }

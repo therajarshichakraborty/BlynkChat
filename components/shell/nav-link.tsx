@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
+import { useUnreadTotal } from "./unread-provider";
 
 type NavLinkProps = {
   href: Route;
@@ -13,11 +14,14 @@ type NavLinkProps = {
   children: ReactNode;
   variant: "rail" | "tab";
   badge?: number;
+  liveUnread?: boolean;
   exact?: boolean;
 };
 
-export function NavLink({ href, match, label, children, variant, badge, exact = false }: NavLinkProps) {
+export function NavLink({ href, match, label, children, variant, badge: staticBadge, liveUnread = false, exact = false }: NavLinkProps) {
   const pathname = usePathname();
+  const unread = useUnreadTotal();
+  const badge = liveUnread ? unread : staticBadge;
   const active = pathname === match || (!exact && pathname.startsWith(`${match}/`));
 
   if (variant === "tab") {

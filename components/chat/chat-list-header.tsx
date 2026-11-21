@@ -4,7 +4,7 @@ import { SquarePenIcon } from "@/components/icons/square-pen-icon";
 import { IconLink } from "@/components/ui/icon-link";
 import { chatListQuery } from "@/lib/utils/chat-filters";
 import { cn } from "@/lib/utils/cn";
-import type { ChatFilter } from "@/types/chat";
+import type { ChatFilter } from "@/types/conversation";
 
 type ChatListHeaderProps = {
   filter: ChatFilter;

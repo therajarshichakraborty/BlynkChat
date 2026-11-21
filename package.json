@@ -5,24 +5,37 @@
   "description": "Relay is a real-time chat app for 1:1 chats, groups, rooms and communities on mobile, tablet and desktop.",
   "scripts": {
     "dev": "next dev -p 4040",
-    "build": "next build",
-    "start": "next start",
+    "build": "prisma generate && next build",
+    "start": "next start -p 4040",
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "next typegen && tsc --noEmit",
-    "check": "bun run typecheck && bun run lint && bun run build"
+    "typecheck": "prisma generate && next typegen && tsc --noEmit",
+    "check": "bun run typecheck && bun run lint && bun run build",
+    "db:up": "docker compose up -d",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "better-auth": "^1.7.27",
     "next": "16.2.10",
+    "pg": "^8.23.1",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "prisma": "7.10.1",
     "tailwindcss": "^4.3.5",
     "typescript": "^5"
   }

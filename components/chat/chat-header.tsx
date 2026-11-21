@@ -5,40 +5,39 @@ import { LockIcon } from "@/components/icons/lock-icon";
 import { PhoneIcon } from "@/components/icons/phone-icon";
 import { SearchIcon } from "@/components/icons/search-icon";
 import { VideoIcon } from "@/components/icons/video-icon";
-import { Avatar } from "@/components/ui/avatar";
 import { IconButton } from "@/components/ui/icon-button";
 import { IconLink } from "@/components/ui/icon-link";
 import { Tag } from "@/components/ui/tag";
-import { cn } from "@/lib/utils/cn";
-import type { Chat } from "@/types/chat";
+import type { ConversationView } from "@/types/conversation";
+import { ChatHeaderAvatar, ChatSubtitle } from "./chat-subtitle";
 
 type ChatHeaderProps = {
-  chat: Chat;
-  subtitle: string;
+  conversation: ConversationView;
+  actions?: ReactNode;
   children?: ReactNode;
 };
 
-export function ChatHeader({ chat, subtitle, children }: ChatHeaderProps) {
+export function ChatHeader({ conversation, actions, children }: ChatHeaderProps) {
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b border-line bg-bg/80 px-2 backdrop-blur-xl md:h-18 md:gap-3 md:px-6">
       <IconLink href="/chats" label="Back to chats" className="md:hidden">
         <ChevronLeftIcon size={22} />
       </IconLink>
-      <Avatar initials={chat.initials} tone={chat.tone} size="lg" online={chat.online} />
+      <ChatHeaderAvatar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <h1 className="truncate text-md font-semibold md:text-lg">{chat.title}</h1>
-        <p className={cn("truncate text-sm", chat.typing ? "font-medium text-accent-text" : "text-muted")}>
-          {subtitle}
-        </p>
+        <h1 className="truncate text-md font-semibold md:text-lg">{conversation.title}</h1>
+        <ChatSubtitle />
       </div>
       <span className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-3 text-sm text-muted max-lg:hidden">
         <LockIcon size={15} />
         End-to-end encrypted
       </span>
-      <IconButton label="Search in conversation" className="max-md:hidden">
-        <SearchIcon size={20} />
-      </IconButton>
-      <IconButton label="Start audio call">
+      {actions ?? (
+        <IconButton label="Search in conversation" className="max-md:hidden">
+          <SearchIcon size={20} />
+        </IconButton>
+      )}
+      <IconButton label="Audio calls are coming soon" aria-disabled="true">
         <PhoneIcon size={20} />
       </IconButton>
       <Link

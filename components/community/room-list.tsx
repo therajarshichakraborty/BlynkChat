@@ -4,14 +4,13 @@ import { BriefcaseIcon } from "@/components/icons/briefcase-icon";
 import { HashIcon } from "@/components/icons/hash-icon";
 import { MegaphoneIcon } from "@/components/icons/megaphone-icon";
 import { VolumeIcon } from "@/components/icons/volume-icon";
-import { AvatarStack } from "@/components/ui/avatar-stack";
 import { Badge } from "@/components/ui/badge";
 import { Tag } from "@/components/ui/tag";
 import { roomHref } from "@/lib/utils/community-links";
 import { cn } from "@/lib/utils/cn";
-import type { RoomIcon, TextRoom, VoiceRoom } from "@/types/community";
+import type { RoomIconView, RoomSummary } from "@/types/community";
 
-const roomIcons: Record<RoomIcon, typeof HashIcon> = {
+const roomIcons: Record<RoomIconView, typeof HashIcon> = {
   hash: HashIcon,
   megaphone: MegaphoneIcon,
   briefcase: BriefcaseIcon,
@@ -19,13 +18,12 @@ const roomIcons: Record<RoomIcon, typeof HashIcon> = {
 };
 
 type RoomListProps = {
-  communityId: string;
+  communitySlug: string;
   activeRoom: string;
-  textRooms: TextRoom[];
-  voiceRooms: VoiceRoom[];
+  rooms: RoomSummary[];
 };
 
-export function RoomList({ communityId, activeRoom, textRooms, voiceRooms }: RoomListProps) {
+export function RoomList({ communitySlug, activeRoom, rooms }: RoomListProps) {
   return (
     <nav aria-label="Rooms" className="flex flex-col gap-6 px-3 py-5">
       <section aria-labelledby="text-rooms">
@@ -33,13 +31,13 @@ export function RoomList({ communityId, activeRoom, textRooms, voiceRooms }: Roo
           Text rooms
         </h3>
         <ul className="flex flex-col gap-0.5">
-          {textRooms.map((room) => {
+          {rooms.map((room) => {
             const RoomGlyph = roomIcons[room.icon];
-            const active = room.id === activeRoom;
+            const active = room.slug === activeRoom;
             return (
               <li key={room.id}>
                 <Link
-                  href={roomHref(communityId, room.id)}
+                  href={roomHref(communitySlug, room.slug)}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex h-10 items-center gap-2.5 rounded-md border px-3 text-md transition-colors duration-150",
@@ -51,9 +49,7 @@ export function RoomList({ communityId, activeRoom, textRooms, voiceRooms }: Roo
                 >
                   <RoomGlyph size={17} className="shrink-0 text-muted" />
                   <span className="truncate">{room.name}</span>
-                  {room.unread > 0 ? (
-                    <Badge count={room.unread} label="unread" className="ml-auto" />
-                  ) : null}
+                  {room.unread > 0 && !active ? <Badge count={room.unread} label="unread" className="ml-auto" /> : null}
                 </Link>
               </li>
             );
@@ -65,26 +61,11 @@ export function RoomList({ communityId, activeRoom, textRooms, voiceRooms }: Roo
           Voice rooms
         </h3>
         <ul className="flex flex-col gap-1">
-          {voiceRooms.map((room) => (
-            <li key={room.id} className="flex flex-col gap-1.5 rounded-md px-3 py-2">
-              <span className="flex items-center gap-2.5 text-md text-muted">
-                <VolumeIcon size={17} className="shrink-0" />
-                <span className="truncate text-fg">{room.name}</span>
-                {room.live > 0 ? (
-                  <Tag variant="success" className="ml-auto">
-                    <span className="size-1.5 rounded-full bg-success" />
-                    {room.live} live
-                  </Tag>
-                ) : null}
-              </span>
-              {room.participants.length > 0 ? (
-                <span className="flex items-center gap-2 pl-7">
-                  <AvatarStack people={room.participants} size="sm" />
-                  {room.activity ? <span className="truncate text-sm text-muted">{room.activity}</span> : null}
-                </span>
-              ) : null}
-            </li>
-          ))}
+          <li className="flex items-center gap-2.5 rounded-md px-3 py-2 text-md text-muted" title="Voice rooms are coming soon">
+            <VolumeIcon size={17} className="shrink-0" />
+            <span className="truncate">Lounge</span>
+            <Tag className="ml-auto">Soon</Tag>
+          </li>
         </ul>
       </section>
     </nav>

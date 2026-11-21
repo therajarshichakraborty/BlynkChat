@@ -1,39 +1,50 @@
-import { Fragment } from "react";
-import type { Message } from "@/types/chat";
-import type { User } from "@/types/user";
+"use client";
+
+import { Fragment, type ReactNode, type Ref } from "react";
+import { useTimeZone } from "@/components/shell/time-zone";
+import { dayKey, dayLabel } from "@/lib/utils/time";
 import { DateDivider } from "./date-divider";
-import { MessageBubble } from "./message-bubble";
-import { TypingIndicator } from "./typing-indicator";
+import type { ThreadMessage } from "./thread-state";
+import { UnreadDivider } from "./unread-divider";
 
 type MessageListProps = {
-  messages: Message[];
-  people: Record<string, User>;
-  currentUserId: string;
-  group: boolean;
-  typing?: User;
+  messages: ThreadMessage[];
+  unreadFromId: string | null;
+  unreadCount: number;
+  unreadRef?: Ref<HTMLLIElement>;
+  renderMessage: (message: ThreadMessage, previous: ThreadMessage | undefined) => ReactNode;
+  className?: string;
+  children?: ReactNode;
 };
 
-export function MessageList({ messages, people, currentUserId, group, typing }: MessageListProps) {
+export function MessageList({
+  messages,
+  unreadFromId,
+  unreadCount,
+  unreadRef,
+  renderMessage,
+  className = "mx-auto flex w-full max-w-4xl flex-col gap-3 px-3 py-5 md:px-6",
+  children,
+}: MessageListProps) {
+  const timeZone = useTimeZone();
+
   return (
-    <ol aria-label="Messages" className="mx-auto flex w-full max-w-4xl flex-col gap-3 px-3 py-5 md:px-6">
+    <ol aria-label="Messages" className={className}>
       {messages.map((message, index) => {
         const previous = messages[index - 1];
-        const outgoing = message.authorId === currentUserId;
+        const day = dayKey(message.createdAt, timeZone);
+        const newDay = !previous || dayKey(previous.createdAt, timeZone) !== day;
         return (
-          <Fragment key={message.id}>
-            {previous?.day !== message.day ? <DateDivider label={message.day} /> : null}
-            <MessageBubble
-              message={message}
-              author={people[message.authorId]}
-              outgoing={outgoing}
-              showAuthor={group && !outgoing}
-            />
+          <Fragment key={message.clientId ?? message.id}>
+            {newDay ? <DateDivider label={dayLabel(message.createdAt, timeZone)} /> : null}
+            {message.id === unreadFromId && unreadCount > 0 ? (
+              <UnreadDivider ref={unreadRef} count={unreadCount} />
+            ) : null}
+            {renderMessage(message, previous)}
           </Fragment>
         );
       })}
-      {typing ? (
-        <TypingIndicator name={typing.firstName} initials={typing.initials} tone={typing.tone} />
-      ) : null}
+      {children}
     </ol>
   );
 }

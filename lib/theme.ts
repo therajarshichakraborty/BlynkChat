@@ -2,7 +2,9 @@ export type ThemePreference = "light" | "dark" | "system";
 
 const themeStorageKey = "relay-theme";
 
-export const themeScript = `(function(){var k="${themeStorageKey}";var d=document.documentElement;try{var m=window.matchMedia("(prefers-color-scheme: dark)");var r=function(){var s=localStorage.getItem(k);d.dataset.theme=s==="light"||s==="dark"?s:m.matches?"dark":"light";};r();m.addEventListener("change",r);}catch(e){d.dataset.theme="light";}})();`;
+export const timeZoneCookie = "relay-tz";
+
+export const themeScript = `(function(){var k="${themeStorageKey}";var d=document.documentElement;try{document.cookie="${timeZoneCookie}="+encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone)+";path=/;max-age=31536000;samesite=lax";}catch(e){}try{var m=window.matchMedia("(prefers-color-scheme: dark)");var r=function(){var s=localStorage.getItem(k);d.dataset.theme=s==="light"||s==="dark"?s:m.matches?"dark":"light";};r();m.addEventListener("change",r);}catch(e){d.dataset.theme="light";}})();`;
 
 function systemTheme(): "light" | "dark" {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";

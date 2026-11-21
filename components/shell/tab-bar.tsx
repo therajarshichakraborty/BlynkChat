@@ -3,7 +3,6 @@ import { MessageCircleIcon } from "@/components/icons/message-circle-icon";
 import { PhoneIcon } from "@/components/icons/phone-icon";
 import { SettingsIcon } from "@/components/icons/settings-icon";
 import { UsersIcon } from "@/components/icons/users-icon";
-import { getUnreadTotal } from "@/lib/data/chats";
 import { NavLink } from "./nav-link";
 import { SoonTab } from "./soon-tab";
 import { TabBarFrame } from "./tab-bar-frame";
@@ -11,7 +10,7 @@ import { TabBarFrame } from "./tab-bar-frame";
 export function TabBar() {
   return (
     <TabBarFrame>
-      <NavLink href="/chats" match="/chats" label="Chats" variant="tab" badge={getUnreadTotal()}>
+      <NavLink href="/chats" match="/chats" label="Chats" variant="tab" liveUnread>
         <MessageCircleIcon size={22} />
       </NavLink>
       <SoonTab label="Updates">

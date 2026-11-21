@@ -1,6 +1,3 @@
-"use client";
-
-import { useSelectedLayoutSegment } from "next/navigation";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
@@ -8,12 +5,10 @@ type SplitViewProps = {
   list: ReactNode;
   children: ReactNode;
   listLabel: string;
+  open: boolean;
 };
 
-export function SplitView({ list, children, listLabel }: SplitViewProps) {
-  const segment = useSelectedLayoutSegment();
-  const open = segment !== null && !segment.startsWith("__");
-
+export function SplitView({ list, children, listLabel, open }: SplitViewProps) {
   return (
     <>
       <aside

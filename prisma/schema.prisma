@@ -1,0 +1,532 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "./generated"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Tone {
+  BLUE
+  SKY
+  INDIGO
+  VIOLET
+  PURPLE
+  PINK
+  ORANGE
+  AMBER
+  TEAL
+  EMERALD
+  CYAN
+  SLATE
+}
+
+enum Audience {
+  EVERYONE
+  CONTACTS
+  NOBODY
+}
+
+enum ThemePreference {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+model User {
+  id                 String               @id @default(cuid())
+  name               String
+  email              String               @unique
+  emailVerified      Boolean              @default(false)
+  image              String?
+  username           String               @unique
+  displayUsername    String?
+  bio                String               @default("")
+  title              String               @default("")
+  location           String               @default("")
+  tone               Tone                 @default(BLUE)
+  lastSeenAt         DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  sessions           Session[]
+  accounts           Account[]
+  settings           UserSettings?
+  memberships        ConversationMember[]
+  messages           Message[]
+  hiddenMessages     MessageHidden[]
+  createdChats       Conversation[]       @relation("ConversationCreator")
+  joinRequests       JoinRequest[]        @relation("JoinRequester")
+  decidedRequests    JoinRequest[]        @relation("JoinRequestDecider")
+  attachments        Attachment[]
+  reactions          Reaction[]
+  starredMessages    StarredMessage[]
+  pinnedMessages     PinnedMessage[]
+  pollVotes          PollVote[]
+  createdCommunities Community[]          @relation("CommunityCreator")
+  communities        CommunityMember[]
+  blocksMade         Block[]              @relation("BlocksMade")
+  blocksReceived     Block[]              @relation("BlocksReceived")
+  stories            Story[]
+  storyViews         StoryView[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model UserSettings {
+  id                  String          @id @default(cuid())
+  userId              String          @unique
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastSeenVisibility  Audience        @default(EVERYONE)
+  photoVisibility     Audience        @default(EVERYONE)
+  readReceipts        Boolean         @default(true)
+  typingIndicator     Boolean         @default(true)
+  approveGroupInvites Boolean         @default(false)
+  notifyDirect        Boolean         @default(true)
+  notifyGroups        Boolean         @default(true)
+  notifyMentionsOnly  Boolean         @default(true)
+  notifySounds        Boolean         @default(false)
+  theme               ThemePreference @default(SYSTEM)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@map("user_settings")
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+  ROOM
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum RoomIcon {
+  HASH
+  MEGAPHONE
+  BRIEFCASE
+  BOOK
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MessageKind {
+  TEXT
+  IMAGE
+  FILE
+  VOICE
+  POLL
+  SYSTEM
+}
+
+model Conversation {
+  id                  String               @id @default(cuid())
+  type                ConversationType
+  title               String?
+  description         String               @default("")
+  image               String?
+  tone                Tone                 @default(BLUE)
+  communityId         String?
+  community           Community?           @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  slug                String?
+  roomIcon            RoomIcon?
+  directKey           String?              @unique
+  onlyAdminsCanPost   Boolean              @default(false)
+  requireApproval     Boolean              @default(false)
+  disappearingSeconds Int?
+  inviteCode          String               @unique @default(cuid())
+  lastMessageAt       DateTime             @default(now())
+  createdById         String?
+  createdBy           User?                @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  members             ConversationMember[]
+  messages            Message[]
+  joinRequests        JoinRequest[]
+  pinnedMessages      PinnedMessage[]
+
+  @@unique([communityId, slug])
+  @@index([lastMessageAt])
+  @@index([communityId])
+  @@index([createdById])
+  @@map("conversation")
+}
+
+model ConversationMember {
+  id                String       @id @default(cuid())
+  conversationId    String
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role              MemberRole   @default(MEMBER)
+  joinedAt          DateTime     @default(now())
+  leftAt            DateTime?
+  lastReadMessageId String?
+  lastReadAt        DateTime?
+  lastDeliveredAt   DateTime?
+  mutedUntil        DateTime?
+  archivedAt        DateTime?
+  pinnedAt          DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([lastReadMessageId])
+  @@map("conversation_member")
+}
+
+model JoinRequest {
+  id             String            @id @default(cuid())
+  conversationId String
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User              @relation("JoinRequester", fields: [userId], references: [id], onDelete: Cascade)
+  status         JoinRequestStatus @default(PENDING)
+  decidedById    String?
+  decidedBy      User?             @relation("JoinRequestDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([decidedById])
+  @@map("join_request")
+}
+
+model Message {
+  id              String           @id @default(cuid())
+  conversationId  String
+  conversation    Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId        String?
+  sender          User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  kind            MessageKind      @default(TEXT)
+  body            String           @default("")
+  systemData      Json?
+  replyToId       String?
+  replyTo         Message?         @relation("MessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies         Message[]        @relation("MessageReply")
+  threadRootId    String?
+  threadRoot      Message?         @relation("MessageThread", fields: [threadRootId], references: [id], onDelete: Cascade)
+  threadReplies   Message[]        @relation("MessageThread")
+  forwarded       Boolean          @default(false)
+  editedAt        DateTime?
+  deletedAt       DateTime?
+  expiresAt       DateTime?
+  clientId        String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  hiddenFor       MessageHidden[]
+  attachments     Attachment[]
+  reactions       Reaction[]
+  starredMessages StarredMessage[]
+  pinnedMessages  PinnedMessage[]
+  poll            Poll?
+
+  @@unique([senderId, clientId])
+  @@index([conversationId, createdAt(sort: Desc), id])
+  @@index([senderId])
+  @@index([replyToId])
+  @@index([threadRootId])
+  @@index([expiresAt])
+  @@map("message")
+}
+
+model MessageHidden {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("message_hidden")
+}
+
+enum AttachmentKind {
+  IMAGE
+  FILE
+  VOICE
+}
+
+model Attachment {
+  id         String         @id @default(cuid())
+  messageId  String?
+  message    Message?       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  uploaderId String
+  uploader   User           @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  kind       AttachmentKind
+  mime       String
+  size       Int
+  name       String
+  path       String
+  width      Int?
+  height     Int?
+  durationMs Int?
+  waveform   Json?
+  story      Story?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([messageId])
+  @@index([uploaderId])
+  @@map("attachment")
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([messageId, userId, emoji])
+  @@index([userId])
+  @@map("reaction")
+}
+
+model StarredMessage {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("starred_message")
+}
+
+model PinnedMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  messageId      String
+  message        Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  pinnedById     String?
+  pinnedBy       User?        @relation(fields: [pinnedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([conversationId, messageId])
+  @@index([messageId])
+  @@index([pinnedById])
+  @@map("pinned_message")
+}
+
+model Poll {
+  id             String       @id @default(cuid())
+  messageId      String       @unique
+  message        Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  question       String
+  multipleChoice Boolean      @default(false)
+  closedAt       DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  options        PollOption[]
+  votes          PollVote[]
+
+  @@map("poll")
+}
+
+model PollOption {
+  id        String     @id @default(cuid())
+  pollId    String
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  label     String
+  position  Int
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  votes     PollVote[]
+
+  @@index([pollId])
+  @@map("poll_option")
+}
+
+model PollVote {
+  id        String     @id @default(cuid())
+  pollId    String
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId  String
+  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([optionId, userId])
+  @@index([pollId])
+  @@index([userId])
+  @@map("poll_vote")
+}
+
+enum CommunityCategory {
+  TECHNOLOGY
+  DESIGN
+  ML
+  STARTUPS
+  CAMPUS
+  HOBBIES
+  LOCAL
+}
+
+enum CommunityVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum StoryKind {
+  TEXT
+  IMAGE
+}
+
+model Community {
+  id          String              @id @default(cuid())
+  slug        String              @unique
+  name        String
+  description String              @default("")
+  image       String?
+  cover       Tone                @default(BLUE)
+  tone        Tone                @default(BLUE)
+  category    CommunityCategory
+  visibility  CommunityVisibility @default(PUBLIC)
+  verified    Boolean             @default(false)
+  createdById String?
+  createdBy   User?               @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  members     CommunityMember[]
+  rooms       Conversation[]
+
+  @@index([category])
+  @@index([createdById])
+  @@map("community")
+}
+
+model CommunityMember {
+  id          String     @id @default(cuid())
+  communityId String
+  community   Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        MemberRole @default(MEMBER)
+  joinedAt    DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([communityId, userId])
+  @@index([userId])
+  @@map("community_member")
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User     @relation("BlocksMade", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("block")
+}
+
+model Story {
+  id           String      @id @default(cuid())
+  authorId     String
+  author       User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  kind         StoryKind
+  body         String      @default("")
+  background   Tone        @default(BLUE)
+  attachmentId String?     @unique
+  attachment   Attachment? @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
+  expiresAt    DateTime
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  views        StoryView[]
+
+  @@index([authorId, createdAt])
+  @@index([expiresAt])
+  @@map("story")
+}
+
+model StoryView {
+  id        String   @id @default(cuid())
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  viewerId  String
+  viewer    User     @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+  viewedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([storyId, viewerId])
+  @@index([viewerId])
+  @@map("story_view")
+}

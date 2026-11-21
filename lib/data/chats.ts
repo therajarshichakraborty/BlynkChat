@@ -1,44 +1,47 @@
-import { chats, commonGroupIds, sharedItems, sharedMedia } from "@/lib/mock/chats";
-import { messages } from "@/lib/mock/messages";
-import type { Chat, ChatThread } from "@/types/chat";
-import type { User } from "@/types/user";
-import { getUser } from "./users";
+import "server-only";
+import { cache } from "react";
+import { ServiceError } from "@/lib/server/errors";
+import {
+  getConversationDetails,
+  getConversationView,
+  listConversations,
+  totalUnread,
+} from "@/lib/server/services/conversations";
+import { listMessages } from "@/lib/server/services/messages";
+import { latestPinned } from "@/lib/server/services/pins";
+import type { ChatFilter, ChatSummary, ConversationDetails, ConversationView } from "@/types/conversation";
+import type { MessagePage } from "@/types/message";
 
-export function getChats(): Chat[] {
-  return chats;
-}
-
-export function getChatIds(): string[] {
-  return chats.map((chat) => chat.id);
-}
-
-export function getChat(id: string): Chat | undefined {
-  return chats.find((chat) => chat.id === id);
-}
-
-export function getUnreadTotal(): number {
-  return chats.reduce((total, chat) => total + (chat.muted ? 0 : chat.unread), 0);
-}
-
-export function getChatThread(id: string): ChatThread | undefined {
-  const chat = getChat(id);
-  if (!chat) return undefined;
-
-  const thread = messages.filter((message) => message.chatId === id);
-  const people: Record<string, User> = {};
-  for (const message of thread) {
-    const author = getUser(message.authorId);
-    if (author) people[author.id] = author;
+async function orNull<T>(load: () => Promise<T>): Promise<T | null> {
+  try {
+    return await load();
+  } catch (error) {
+    if (error instanceof ServiceError && error.code === "NOT_FOUND") return null;
+    throw error;
   }
+}
 
-  return {
-    chat,
-    peer: chat.peerId ? getUser(chat.peerId) : undefined,
-    people,
-    messages: thread,
-    media: sharedMedia,
-    mediaCount: 248,
-    shared: sharedItems,
-    commonGroups: chats.filter((item) => commonGroupIds.includes(item.id) && item.id !== id),
-  };
+export function getChatList(userId: string, filter: ChatFilter, query: string): Promise<ChatSummary[]> {
+  return listConversations(userId, { filter, query });
+}
+
+export function getUnreadTotal(userId: string): Promise<number> {
+  return totalUnread(userId);
+}
+
+export const getConversation = cache(
+  (userId: string, conversationId: string): Promise<ConversationView | null> =>
+    orNull(() => getConversationView(userId, conversationId)),
+);
+
+export function getMessagePage(userId: string, conversationId: string, cursor?: string): Promise<MessagePage> {
+  return listMessages(userId, conversationId, cursor);
+}
+
+export function getConversationInfo(userId: string, conversationId: string): Promise<ConversationDetails> {
+  return getConversationDetails(userId, conversationId);
+}
+
+export function getPinnedMessages(userId: string, conversationId: string): Promise<{ id: string; text: string }[]> {
+  return latestPinned(userId, conversationId);
 }

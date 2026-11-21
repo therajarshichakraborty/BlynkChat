@@ -1,29 +1,30 @@
 import { Avatar } from "@/components/ui/avatar";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils/cn";
-import type { CommunityMember } from "@/types/community";
+import type { MemberView } from "@/types/conversation";
 
 type MemberGroupProps = {
   id: string;
   title: string;
-  members: CommunityMember[];
+  members: MemberView[];
   dimmed?: boolean;
 };
 
 function MemberGroup({ id, title, members, dimmed = false }: MemberGroupProps) {
+  if (members.length === 0) return null;
   return (
     <section aria-labelledby={id}>
       <h3 id={id} className="px-2 pb-2 text-2xs font-semibold tracking-wider text-muted uppercase">
         {title}
       </h3>
       <ul className="flex flex-col gap-0.5">
-        {members.map(({ user, role }) => (
+        {members.map(({ person, role, online }) => (
           <li
-            key={user.id}
+            key={person.id}
             className={cn("flex items-center gap-3 rounded-md px-2 py-1.5", dimmed && "opacity-55")}
           >
-            <Avatar initials={user.initials} tone={user.tone} size="md" online={!dimmed && user.online} />
-            <span className="min-w-0 flex-1 truncate text-md">{user.name}</span>
+            <Avatar initials={person.initials} tone={person.tone} image={person.image} size="md" online={!dimmed && online} />
+            <span className="min-w-0 flex-1 truncate text-md">{person.name}</span>
             {role !== "member" ? <Tag>{role}</Tag> : null}
           </li>
         ))}
@@ -33,9 +34,9 @@ function MemberGroup({ id, title, members, dimmed = false }: MemberGroupProps) {
 }
 
 type MembersPanelProps = {
-  admins: CommunityMember[];
-  online: CommunityMember[];
-  offline: CommunityMember[];
+  admins: MemberView[];
+  online: MemberView[];
+  offline: MemberView[];
   onlineCount: number;
   offlineCount: number;
 };

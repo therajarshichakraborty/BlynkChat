@@ -1,13 +1,13 @@
 import { PlusIcon } from "@/components/icons/plus-icon";
 import { SparklesIcon } from "@/components/icons/sparkles-icon";
-import { ButtonLink } from "@/components/ui/button-link";
 import { IconLink } from "@/components/ui/icon-link";
 import { SearchInput } from "@/components/ui/search-input";
-import type { Community } from "@/types/community";
+import type { CommunitySummary } from "@/types/community";
+import { CreateCommunityButton } from "./create-community-button";
 import { CommunityListItem } from "./community-list-item";
 
 type CommunitiesSidebarProps = {
-  joined: Community[];
+  joined: CommunitySummary[];
   query: string;
 };
 
@@ -35,6 +35,9 @@ export function CommunitiesSidebar({ joined, query }: CommunitiesSidebarProps) {
         {joined.map((community) => (
           <CommunityListItem key={community.id} community={community} />
         ))}
+        {joined.length === 0 ? (
+          <li className="px-3 py-4 text-sm text-muted">Communities you join show up here.</li>
+        ) : null}
       </ul>
       <div className="mt-auto p-4">
         <div className="rounded-xl border border-line bg-linear-to-br from-card via-card to-accent-soft p-5 shadow-sm">
@@ -45,9 +48,7 @@ export function CommunitiesSidebar({ joined, query }: CommunitiesSidebarProps) {
           <p className="mt-1 text-sm text-muted">
             Bring groups, rooms and announcements under one roof.
           </p>
-          <ButtonLink href="/communities#explore" variant="dark" size="sm" className="mt-4 h-9">
-            Create community
-          </ButtonLink>
+          <CreateCommunityButton />
         </div>
       </div>
     </aside>

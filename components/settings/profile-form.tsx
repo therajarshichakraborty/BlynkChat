@@ -7,7 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { TextAreaField } from "@/components/ui/text-area-field";
 import { TextField } from "@/components/ui/text-field";
 import { updateProfile } from "@/lib/data/profile";
-import { validateUsername } from "@/lib/validation/auth";
+import { usernameSchema } from "@/lib/validation/auth";
 
 type ProfileFormProps = {
   name: string;
@@ -33,7 +33,7 @@ export function ProfileForm({ name, username, bio }: ProfileFormProps) {
     event.preventDefault();
     const nextErrors = {
       name: values.name.trim() ? undefined : "Enter a display name.",
-      username: validateUsername(values.username),
+      username: usernameSchema.safeParse(values.username).error?.issues[0]?.message,
     };
     setErrors(nextErrors);
     if (nextErrors.name || nextErrors.username) return;
