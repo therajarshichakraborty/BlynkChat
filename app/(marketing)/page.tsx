@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FeaturesSection } from "@/components/landing/features-section";
 import { Hero } from "@/components/landing/hero";
 import { siteDescription } from "@/lib/site";
 
@@ -11,6 +12,7 @@ export default function LandingPage() {
   return (
     <main id="main" className="flex-1">
       <Hero />
+      <FeaturesSection />
     </main>
   );
 }
