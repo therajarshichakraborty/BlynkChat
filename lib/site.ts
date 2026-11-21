@@ -1,7 +1,6 @@
 import type { Route } from "next";
 
 export const siteName = "Relay";
-
 export const afterAuthRoute: Route = "/chats";
 
 export const siteDescription =

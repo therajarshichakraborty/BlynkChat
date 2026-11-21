@@ -56,7 +56,7 @@ export function RoomFeed({ roomName, currentUserId, initialMessages, people, typ
         </ol>
         <div ref={endRef} />
       </div>
-      <div className="px-3 pb-3 md:px-8 md:pb-5">
+      <div className="px-3 pb-[max(12px,env(safe-area-inset-bottom))] md:px-8 md:pb-5">
         {typingLabel ? (
           <p className="flex items-center gap-2 px-1 pb-2 text-sm text-muted" aria-live="polite">
             <span aria-hidden="true" className="flex gap-0.5">

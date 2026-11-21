@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-const immersive = [/^\/chats\/[^/]+$/, /^\/communities\/[^/]+\/[^/]+$/, /^\/groups\/new$/];
+const immersive = [/^\/chats\/[^/]+$/, /^\/communities\/[^/]+\/[^/]+$/, /^\/groups\/new$/, /^\/video$/];
 
 export function TabBarFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname();

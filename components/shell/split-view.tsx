@@ -19,7 +19,7 @@ export function SplitView({ list, children, listLabel }: SplitViewProps) {
       <aside
         aria-label={listLabel}
         className={cn(
-          "flex w-full shrink-0 flex-col border-line bg-surface md:w-80 md:border-r xl:w-96",
+          "flex w-full shrink-0 flex-col border-line bg-bg md:w-80 md:border-r md:bg-surface xl:w-96",
           open && "max-md:hidden",
         )}
       >

@@ -3,6 +3,7 @@ import { ChatList } from "@/components/chat/chat-list";
 import { ChatListSkeleton } from "@/components/chat/chat-list-skeleton";
 import { SplitView } from "@/components/shell/split-view";
 import { getChats, getUnreadTotal } from "@/lib/data/chats";
+import { getContacts, getCurrentUser } from "@/lib/data/users";
 
 export default function ChatsLayout({ children }: { children: ReactNode }) {
   return (
@@ -10,7 +11,12 @@ export default function ChatsLayout({ children }: { children: ReactNode }) {
       listLabel="Chat list"
       list={
         <Suspense fallback={<ChatListSkeleton />}>
-          <ChatList chats={getChats()} unreadCount={getUnreadTotal()} />
+          <ChatList
+            chats={getChats()}
+            unreadCount={getUnreadTotal()}
+            me={getCurrentUser()}
+            stories={getContacts().filter((user) => user.online).slice(0, 5)}
+          />
         </Suspense>
       }
     >

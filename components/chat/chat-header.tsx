@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronLeftIcon } from "@/components/icons/chevron-left-icon";
 import { LockIcon } from "@/components/icons/lock-icon";
@@ -40,15 +41,15 @@ export function ChatHeader({ chat, subtitle, children }: ChatHeaderProps) {
       <IconButton label="Start audio call">
         <PhoneIcon size={20} />
       </IconButton>
-      <span
-        aria-disabled="true"
+      <Link
+        href="/video"
         title="Video calls are coming soon"
-        className="inline-flex h-10 items-center gap-2 rounded-full border border-line pr-1.5 pl-3 text-faint"
+        className="inline-flex h-10 items-center gap-2 rounded-full border border-line pr-1.5 pl-3 text-faint transition-colors duration-150 hover:bg-surface"
       >
         <VideoIcon size={19} />
-        <span className="sr-only">Video call, coming soon</span>
+        <span className="sr-only">Video calls, coming soon</span>
         <Tag aria-hidden="true">Soon</Tag>
-      </span>
+      </Link>
       {children}
     </header>
   );

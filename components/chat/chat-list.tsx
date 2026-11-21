@@ -13,17 +13,21 @@ import { SearchIcon } from "@/components/icons/search-icon";
 import { EmptyState } from "@/components/ui/empty-state";
 import { chatListQuery, filterChats, parseChatFilter } from "@/lib/utils/chat-filters";
 import type { Chat } from "@/types/chat";
+import type { User } from "@/types/user";
 import { ChatFilters } from "./chat-filters";
 import { ChatListHeader } from "./chat-list-header";
 import { ChatListItem } from "./chat-list-item";
 import { ChatSearch } from "./chat-search";
+import { StoryStrip } from "./story-strip";
 
 type ChatListProps = {
   chats: Chat[];
   unreadCount: number;
+  me: User;
+  stories: User[];
 };
 
-export function ChatList({ chats, unreadCount }: ChatListProps) {
+export function ChatList({ chats, unreadCount, me, stories }: ChatListProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -47,6 +51,7 @@ export function ChatList({ chats, unreadCount }: ChatListProps) {
       <div className="flex flex-col gap-3 px-4 pt-4 pb-3 md:pt-5">
         <ChatListHeader filter={filter} pathname={pathname} query={query} />
         <ChatSearch value={query} onChange={handleQuery} />
+        <StoryStrip me={me} people={stories} />
         <ChatFilters pathname={pathname} active={filter} query={query} unreadCount={unreadCount} />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4">

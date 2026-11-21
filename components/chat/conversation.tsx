@@ -65,7 +65,7 @@ export function Conversation({
         />
         <div ref={endRef} />
       </div>
-      <div className="px-3 pt-2 pb-3 md:px-6 md:pb-5">
+      <div className="px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))] md:px-6 md:pb-5">
         <Composer placeholder={placeholder} onSend={handleSend} />
       </div>
     </>
