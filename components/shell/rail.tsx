@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GlobeIcon } from "@/components/icons/globe-icon";
+import { HashIcon } from "@/components/icons/hash-icon";
 import { MessageCircleIcon } from "@/components/icons/message-circle-icon";
 import { PhoneIcon } from "@/components/icons/phone-icon";
 import { StarIcon } from "@/components/icons/star-icon";
@@ -8,6 +9,7 @@ import { LogoMark } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getUnreadTotal } from "@/lib/data/chats";
 import { getCurrentUser } from "@/lib/data/users";
+import { roomHref } from "@/lib/utils/community-links";
 import { NavLink } from "./nav-link";
 
 export function Rail() {
@@ -24,7 +26,15 @@ export function Rail() {
       <NavLink href="/chats" match="/chats" label="Chats" variant="rail" badge={getUnreadTotal()}>
         <MessageCircleIcon size={22} />
       </NavLink>
-      <NavLink href="/communities" match="/communities" label="Communities" variant="rail">
+      <NavLink
+        href={roomHref("design-engineers")}
+        match="/communities/design-engineers"
+        label="Rooms"
+        variant="rail"
+      >
+        <HashIcon size={22} />
+      </NavLink>
+      <NavLink href="/communities" match="/communities" label="Communities" variant="rail" exact>
         <GlobeIcon size={22} />
       </NavLink>
       <span

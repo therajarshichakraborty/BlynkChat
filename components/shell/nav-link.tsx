@@ -13,11 +13,12 @@ type NavLinkProps = {
   children: ReactNode;
   variant: "rail" | "tab";
   badge?: number;
+  exact?: boolean;
 };
 
-export function NavLink({ href, match, label, children, variant, badge }: NavLinkProps) {
+export function NavLink({ href, match, label, children, variant, badge, exact = false }: NavLinkProps) {
   const pathname = usePathname();
-  const active = pathname === match || pathname.startsWith(`${match}/`);
+  const active = pathname === match || (!exact && pathname.startsWith(`${match}/`));
 
   if (variant === "tab") {
     return (

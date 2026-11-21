@@ -2,6 +2,7 @@
 
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { sendMessage } from "@/lib/data/messages";
+import { clockTime } from "@/lib/utils/time";
 import type { Message } from "@/types/chat";
 import type { User } from "@/types/user";
 import { Composer } from "./composer";
@@ -16,11 +17,6 @@ type ConversationProps = {
   typing?: User;
   placeholder: string;
 };
-
-function currentTime() {
-  const now = new Date();
-  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-}
 
 export function Conversation({
   chatId,
@@ -49,10 +45,9 @@ export function Conversation({
       chatId,
       authorId: currentUserId,
       body,
-      time: currentTime(),
     };
     startTransition(async () => {
-      addOptimistic({ ...draft, day: "Today", status: "sending" });
+      addOptimistic({ ...draft, day: "Today", time: clockTime(), status: "sending" });
       const saved = await sendMessage(draft);
       startTransition(() => setMessages((current) => [...current, saved]));
     });
