@@ -16,7 +16,7 @@ export default function LoginPage() {
       footer={
         <>
           New to Relay?{" "}
-          <Link href="/" className="font-medium text-accent-text hover:underline">
+          <Link href="/signup" className="font-medium text-accent-text hover:underline">
             Create an account
           </Link>
         </>

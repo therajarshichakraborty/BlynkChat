@@ -11,7 +11,7 @@ export function NavActions() {
       >
         Log in
       </Link>
-      <ButtonLink href="/#features" variant="dark" size="sm" className="h-9 px-4">
+      <ButtonLink href="/signup" variant="dark" size="sm" className="h-9 px-4">
         Get started
         <ArrowRightIcon size={16} />
       </ButtonLink>

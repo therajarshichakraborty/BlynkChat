@@ -1,13 +1,23 @@
-import type { LoginValues } from "@/lib/validation/auth";
+import type { LoginValues, SignupValues } from "@/lib/validation/auth";
 
 export type AuthResult = { ok: true } | { ok: false; error: string };
 
-function settle(): Promise<AuthResult> {
+const takenUsernames = new Set(["arjun", "ananya", "relay"]);
+
+function settle(result: AuthResult): Promise<AuthResult> {
   return new Promise((resolve) => {
-    setTimeout(() => resolve({ ok: true }), 700);
+    setTimeout(() => resolve(result), 700);
   });
 }
 
 export function signIn(values: LoginValues): Promise<AuthResult> {
-  return values.email ? settle() : Promise.resolve({ ok: false, error: "Missing email." });
+  return settle(values.email ? { ok: true } : { ok: false, error: "Missing email." });
+}
+
+export function signUp(values: SignupValues): Promise<AuthResult> {
+  return settle(
+    takenUsernames.has(values.username)
+      ? { ok: false, error: `@${values.username} is already taken. Try another username.` }
+      : { ok: true },
+  );
 }

@@ -51,7 +51,7 @@ export function Hero() {
         desktop.
       </p>
       <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-        <ButtonLink href="/#features" size="lg" className="px-7">
+        <ButtonLink href="/signup" size="lg" className="px-7">
           Start chatting free
           <ArrowRightIcon size={18} />
         </ButtonLink>

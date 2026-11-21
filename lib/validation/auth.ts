@@ -31,6 +31,35 @@ export function validateLogin(values: LoginValues): FieldErrors<LoginValues> {
   return errors;
 }
 
+export type SignupValues = {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
+export function validateUsername(value: string) {
+  if (value.length < 3 || value.length > 20) return "Use 3 to 20 characters.";
+  if (!/^[a-z0-9_]+$/.test(value)) return "Use lowercase letters, numbers and underscores only.";
+  return undefined;
+}
+
+export function validateSignup(values: SignupValues): FieldErrors<SignupValues> {
+  const errors: FieldErrors<SignupValues> = {};
+  const username = validateUsername(values.username);
+  const email = validateEmail(values.email);
+  const password = validatePassword(values.password);
+  if (username) errors.username = username;
+  if (email) errors.email = email;
+  if (password) errors.password = password;
+  if (!values.confirmPassword) {
+    errors.confirmPassword = "Confirm your password.";
+  } else if (values.confirmPassword !== values.password) {
+    errors.confirmPassword = "Passwords do not match.";
+  }
+  return errors;
+}
+
 export function hasErrors<T>(errors: FieldErrors<T>) {
   return Object.values(errors).some(Boolean);
 }
