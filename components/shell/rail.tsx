@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GlobeIcon } from "@/components/icons/globe-icon";
 import { MessageCircleIcon } from "@/components/icons/message-circle-icon";
 import { PhoneIcon } from "@/components/icons/phone-icon";
 import { StarIcon } from "@/components/icons/star-icon";
@@ -22,6 +23,9 @@ export function Rail() {
       </Link>
       <NavLink href="/chats" match="/chats" label="Chats" variant="rail" badge={getUnreadTotal()}>
         <MessageCircleIcon size={22} />
+      </NavLink>
+      <NavLink href="/communities" match="/communities" label="Communities" variant="rail">
+        <GlobeIcon size={22} />
       </NavLink>
       <span
         role="img"

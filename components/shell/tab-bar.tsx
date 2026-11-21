@@ -17,9 +17,9 @@ export function TabBar() {
       <SoonTab label="Updates">
         <CircleDashedIcon size={22} />
       </SoonTab>
-      <SoonTab label="Communities">
+      <NavLink href="/communities" match="/communities" label="Communities" variant="tab">
         <UsersIcon size={22} />
-      </SoonTab>
+      </NavLink>
       <SoonTab label="Calls">
         <PhoneIcon size={22} />
       </SoonTab>
