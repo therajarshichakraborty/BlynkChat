@@ -6,6 +6,7 @@ import { ForwardIcon } from "@/components/icons/forward-icon";
 import { SmilePlusIcon } from "@/components/icons/smile-plus-icon";
 import { StarIcon } from "@/components/icons/star-icon";
 import { MoreHorizontalIcon } from "@/components/icons/more-horizontal-icon";
+import { PinIcon } from "@/components/icons/pin-icon";
 import { PencilIcon } from "@/components/icons/pencil-icon";
 import { RefreshIcon } from "@/components/icons/refresh-icon";
 import { ReplyIcon } from "@/components/icons/reply-icon";
@@ -33,7 +34,7 @@ function within(createdAt: string, windowMs: number) {
 }
 
 export function MessageActions({ message, outgoing, extraItems = [], leading, className }: MessageActionsProps) {
-  const { conversation, setReplyingTo, setEditing, remove, retry, dispatch, notify, react, star, setForwarding } =
+  const { conversation, setReplyingTo, setEditing, remove, retry, dispatch, notify, react, star, setForwarding, pin, canPin } =
     useConversation();
   const admin = conversation.myRole !== "member" && conversation.kind !== "direct";
 
@@ -82,6 +83,9 @@ export function MessageActions({ message, outgoing, extraItems = [], leading, cl
     });
     if (message.kind !== "poll") {
       items.push({ label: "Forward", icon: <ForwardIcon size={16} />, onSelect: () => setForwarding(message) });
+    }
+    if (canPin && message.kind !== "system" && !message.threadRootId) {
+      items.push({ label: message.pinned ? "Unpin" : "Pin", icon: <PinIcon size={16} />, onSelect: () => pin(message) });
     }
     items.push(...extraItems);
     if (outgoing && message.body && message.kind === "text" && within(message.createdAt, editWindowMs)) {

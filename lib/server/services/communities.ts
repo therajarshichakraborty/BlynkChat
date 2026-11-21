@@ -327,6 +327,7 @@ export async function getRoomPage(userId: string, slug: string, roomSlug: string
     topic: room.description,
     unread: unread.byRoom.get(room.id) ?? 0,
   }));
+  roomSummaries.sort((a, b) => Number(b.slug === "announcements") - Number(a.slug === "announcements"));
   const current = roomSummaries.find((room) => room.slug === roomSlug);
   if (!current) return null;
 

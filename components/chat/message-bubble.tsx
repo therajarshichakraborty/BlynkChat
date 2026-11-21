@@ -111,7 +111,7 @@ export function MessageBubble({
             <VoiceNote voice={voice} outgoing={outgoing} />
             <span className="self-end">{meta}</span>
           </>
-        ) : message.body ? (
+        ) : message.body && message.kind !== "poll" ? (
           <p className={cn("break-words whitespace-pre-wrap", hasMedia && "px-2")}>
             {message.body}
             <span className="float-right mt-1.5 ml-3 translate-y-1">{meta}</span>

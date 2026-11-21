@@ -15,10 +15,20 @@ type ActionMenuProps = {
   icon: ReactNode;
   items: MenuItem[];
   align?: "start" | "end";
+  placement?: "top" | "bottom";
+  buttonClassName?: string;
   className?: string;
 };
 
-export function ActionMenu({ label, icon, items, align = "end", className }: ActionMenuProps) {
+export function ActionMenu({
+  label,
+  icon,
+  items,
+  align = "end",
+  placement = "bottom",
+  buttonClassName,
+  className,
+}: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
@@ -49,7 +59,10 @@ export function ActionMenu({ label, icon, items, align = "end", className }: Act
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((value) => !value)}
-        className="inline-grid size-8 place-items-center rounded-md text-muted transition-colors duration-150 hover:bg-raised hover:text-fg"
+        className={cn(
+          "inline-grid size-8 place-items-center rounded-md text-muted transition-colors duration-150 hover:bg-raised hover:text-fg",
+          buttonClassName,
+        )}
       >
         {icon}
       </button>
@@ -58,7 +71,8 @@ export function ActionMenu({ label, icon, items, align = "end", className }: Act
           id={menuId}
           role="menu"
           className={cn(
-            "absolute top-full z-30 mt-1 min-w-48 rounded-lg border border-line bg-card p-1 shadow-lg",
+            "absolute z-30 min-w-48 rounded-lg border border-line bg-card p-1 shadow-lg",
+            placement === "bottom" ? "top-full mt-1" : "bottom-full mb-1",
             align === "end" ? "right-0" : "left-0",
           )}
         >

@@ -3,7 +3,8 @@ import { GroupManage } from "@/components/group/group-manage";
 import { GroupSettingsPanel } from "@/components/group/group-settings-panel";
 import { JoinRequests } from "@/components/group/join-requests";
 import { SidePanel, SidePanelProvider, SidePanelToggle } from "@/components/shell/side-panel";
-import { getConversation, getConversationInfo, getMessagePage } from "@/lib/data/chats";
+import { PinnedBar } from "@/components/community/pinned-bar";
+import { getConversation, getConversationInfo, getMessagePage, getPinnedMessages } from "@/lib/data/chats";
 import { getJoinRequests } from "@/lib/data/groups";
 import { getProfile } from "@/lib/data/users";
 import { ChatHeader } from "./chat-header";
@@ -21,11 +22,12 @@ export async function ChatView({ userId, conversationId }: ChatViewProps) {
   if (!conversation) notFound();
 
   const group = conversation.kind === "group";
-  const [page, details, me, requests] = await Promise.all([
+  const [page, details, me, requests, pins] = await Promise.all([
     getMessagePage(userId, conversationId),
     getConversationInfo(userId, conversationId),
     getProfile(userId),
     group && conversation.myRole !== "member" ? getJoinRequests(userId, conversationId) : Promise.resolve([]),
+    getPinnedMessages(userId, conversationId),
   ]);
   const panelLabel = conversation.kind === "direct" ? "contact info" : "group info";
 
@@ -37,6 +39,7 @@ export async function ChatView({ userId, conversationId }: ChatViewProps) {
             <ChatHeader conversation={conversation}>
               <SidePanelToggle label={panelLabel} />
             </ChatHeader>
+            <PinnedBar pins={pins} />
             <Conversation />
           </section>
           <SidePanel label={panelLabel}>

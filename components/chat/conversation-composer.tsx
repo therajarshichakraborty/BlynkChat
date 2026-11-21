@@ -3,7 +3,11 @@
 import { useRef, useState } from "react";
 import { PlusIcon } from "@/components/icons/plus-icon";
 import { MicIcon } from "@/components/icons/mic-icon";
+import { ChartColumnIcon } from "@/components/icons/chart-column-icon";
+import { FileTextIcon } from "@/components/icons/file-text-icon";
+import { ImageIcon } from "@/components/icons/image-icon";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
+import { PollDialog } from "@/components/community/poll-dialog";
 import { PencilIcon } from "@/components/icons/pencil-icon";
 import { ReplyIcon } from "@/components/icons/reply-icon";
 import { IconButton } from "@/components/ui/icon-button";
@@ -14,6 +18,7 @@ import { firstName, messageSnippet } from "@/lib/utils/messages";
 import { fileAccept, imageAccept } from "@/lib/validation/uploads";
 import { Composer } from "./composer";
 import { ComposerBanner } from "./composer-banner";
+import { ActionMenu, type MenuItem } from "./action-menu";
 import { ComposerNotice } from "./composer-notice";
 import { useConversation } from "./conversation-provider";
 import { PendingUploads } from "./pending-uploads";
@@ -27,13 +32,14 @@ function lockedReason(blocked: "none" | "by-me" | "by-them", onlyAdmins: boolean
 }
 
 export function ConversationComposer() {
-  const { conversation, me, replyingTo, setReplyingTo, editing, setEditing, send, saveEdit, signalTyping, notify } =
+  const { conversation, me, replyingTo, setReplyingTo, editing, setEditing, send, saveEdit, signalTyping, notify, dispatch } =
     useConversation();
   const fileInput = useRef<HTMLInputElement>(null);
   const imageInput = useRef<HTMLInputElement>(null);
   const attachments = useAttachmentUploads((message) => notify(message));
   const recorder = useVoiceRecorder();
   const [sendingVoice, setSendingVoice] = useState(false);
+  const [creatingPoll, setCreatingPoll] = useState(false);
 
   if (!conversation.canPost) {
     return <ComposerNotice text={lockedReason(conversation.blocked, conversation.onlyAdminsCanPost)} />;
@@ -78,6 +84,22 @@ export function ConversationComposer() {
       />
     );
   }
+
+  function pickImages() {
+    imageInput.current?.click();
+  }
+
+  function pickFiles() {
+    fileInput.current?.click();
+  }
+
+  const addItems: MenuItem[] = [
+    { label: "Photos", icon: <ImageIcon size={16} />, onSelect: pickImages },
+    { label: "Document", icon: <FileTextIcon size={16} />, onSelect: pickFiles },
+    ...(conversation.kind === "direct"
+      ? []
+      : [{ label: "Poll", icon: <ChartColumnIcon size={16} />, onSelect: () => setCreatingPoll(true) }]),
+  ];
 
   const placeholder =
     conversation.kind === "direct"
@@ -140,9 +162,14 @@ export function ConversationComposer() {
           editing ? (
             <span className="w-1" />
           ) : (
-            <IconButton label="Add photos" onClick={() => imageInput.current?.click()}>
-              <PlusIcon size={20} />
-            </IconButton>
+            <ActionMenu
+              label="Add attachment"
+              icon={<PlusIcon size={20} />}
+              items={addItems}
+              align="start"
+              placement="top"
+              buttonClassName="size-10"
+            />
           )
         }
         trailing={
@@ -166,6 +193,13 @@ export function ConversationComposer() {
           attachments.clear();
         }}
       />
+      {creatingPoll ? (
+        <PollDialog
+          conversationId={conversation.id}
+          onClose={() => setCreatingPoll(false)}
+          onCreated={(message) => dispatch({ type: "upsert", message })}
+        />
+      ) : null}
     </>
   );
 }

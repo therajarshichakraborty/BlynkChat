@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MessageSquareTextIcon } from "@/components/icons/message-square-text-icon";
+import { Poll } from "@/components/community/poll";
 import { RoomMessage } from "@/components/community/room-message";
 import { ThreadPanel } from "@/components/community/thread-panel";
 import { markRead } from "@/lib/actions/receipts";
@@ -41,6 +42,7 @@ export function Conversation({ variant = "chat" }: ConversationProps) {
     typists,
     typingLabel,
     react,
+    vote,
     forwarding,
     setForwarding,
     notify,
@@ -139,6 +141,17 @@ export function Conversation({ variant = "chat" }: ConversationProps) {
     setHighlighted(messageId);
   }
 
+  function pollFor(message: ThreadMessage) {
+    if (!message.poll || message.deleted) return null;
+    return (
+      <Poll
+        poll={message.poll}
+        onVote={message.pending ? undefined : (optionId) => vote(message, optionId)}
+        disabled={Boolean(message.pending)}
+      />
+    );
+  }
+
   function renderMessage(message: ThreadMessage) {
     if (message.kind === "system") return <SystemMessage key={message.id} text={message.body} />;
     if (room) {
@@ -159,6 +172,7 @@ export function Conversation({ variant = "chat" }: ConversationProps) {
           highlighted={highlighted === message.id}
           onReplyClick={jumpTo}
           onOpenThread={() => setThreadRootId(message.id)}
+          poll={pollFor(message)}
           onToggleReaction={!message.pending ? (emoji) => react(message, emoji) : undefined}
           actions={
             <MessageActions
@@ -181,6 +195,7 @@ export function Conversation({ variant = "chat" }: ConversationProps) {
         highlighted={highlighted === message.id}
         status={outgoing ? (message.pending ?? deliveryStatus(message, state.receipts)) : undefined}
         onReplyClick={jumpTo}
+        footer={pollFor(message)}
         onToggleReaction={
           conversation.blocked === "none" && !message.pending ? (emoji) => react(message, emoji) : undefined
         }

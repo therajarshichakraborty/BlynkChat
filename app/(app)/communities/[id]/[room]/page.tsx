@@ -9,7 +9,7 @@ import { PinnedBar } from "@/components/community/pinned-bar";
 import { RoomHeader } from "@/components/community/room-header";
 import { UsersIcon } from "@/components/icons/users-icon";
 import { SidePanel, SidePanelProvider, SidePanelToggle } from "@/components/shell/side-panel";
-import { getMessagePage } from "@/lib/data/chats";
+import { getMessagePage, getPinnedMessages } from "@/lib/data/chats";
 import { getRoom } from "@/lib/data/communities";
 import { getProfile } from "@/lib/data/users";
 import { requireUser } from "@/lib/server/session";
@@ -36,7 +36,11 @@ export default async function RoomPage({ params }: RoomPageProps) {
   if (result.kind === "preview") return <CommunityPreview community={result.community} />;
 
   const { page } = result;
-  const [me, initialPage] = await Promise.all([getProfile(user.id), getMessagePage(user.id, page.conversation.id)]);
+  const [me, initialPage, pins] = await Promise.all([
+    getProfile(user.id),
+    getMessagePage(user.id, page.conversation.id),
+    getPinnedMessages(user.id, page.conversation.id),
+  ]);
 
   return (
     <SidePanelProvider>
@@ -55,7 +59,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
                 <UsersIcon size={20} />
               </SidePanelToggle>
             </RoomHeader>
-            {page.pinned ? <PinnedBar messageId={page.pinned.id} text={page.pinned.text} /> : null}
+            <PinnedBar pins={pins} />
             <Conversation variant="room" />
           </section>
           <SidePanel label="Members">

@@ -21,6 +21,7 @@ import {
   loadOlderMessages,
   sendMessage,
 } from "@/lib/actions/messages";
+import { togglePin, vote as voteAction } from "@/lib/actions/polls";
 import { toggleReaction, toggleStar } from "@/lib/actions/reactions";
 import { useTypists } from "@/lib/hooks/use-typists";
 import { useRealtime } from "@/lib/realtime-client";
@@ -60,6 +61,9 @@ type ConversationContextValue = {
   star: (message: MessageView) => void;
   forwarding: MessageView | null;
   setForwarding: (message: MessageView | null) => void;
+  vote: (message: MessageView, optionId: string) => void;
+  pin: (message: MessageView) => void;
+  canPin: boolean;
 };
 
 const ConversationContext = createContext<ConversationContextValue | null>(null);
@@ -299,6 +303,32 @@ export function ConversationProvider({ conversation, me, initialPage, children }
     });
   }
 
+  function vote(message: MessageView, optionId: string) {
+    if (!message.poll) return;
+    const pollId = message.poll.id;
+    startTransition(async () => {
+      const result = await voteAction({ pollId, optionId });
+      startTransition(() => {
+        if (result.ok) dispatch({ type: "upsert", message: result.data });
+        else show(result.error.message);
+      });
+    });
+  }
+
+  function pin(message: MessageView) {
+    startTransition(async () => {
+      const result = await togglePin({ messageId: message.id });
+      startTransition(() => {
+        if (result.ok) {
+          dispatch({ type: "upsert", message: { ...message, pinned: result.data.pinned } });
+          show(result.data.pinned ? "Message pinned" : "Message unpinned", "success");
+        } else show(result.error.message);
+      });
+    });
+  }
+
+  const canPin = conversation.kind === "direct" ? conversation.blocked === "none" : conversation.myRole !== "member";
+
   return (
     <ConversationContext
       value={{
@@ -327,6 +357,9 @@ export function ConversationProvider({ conversation, me, initialPage, children }
         star,
         forwarding,
         setForwarding,
+        vote,
+        pin,
+        canPin,
       }}
     >
       {children}

@@ -8,6 +8,7 @@ import {
   totalUnread,
 } from "@/lib/server/services/conversations";
 import { listMessages } from "@/lib/server/services/messages";
+import { latestPinned } from "@/lib/server/services/pins";
 import type { ChatFilter, ChatSummary, ConversationDetails, ConversationView } from "@/types/conversation";
 import type { MessagePage } from "@/types/message";
 
@@ -39,4 +40,8 @@ export function getMessagePage(userId: string, conversationId: string, cursor?: 
 
 export function getConversationInfo(userId: string, conversationId: string): Promise<ConversationDetails> {
   return getConversationDetails(userId, conversationId);
+}
+
+export function getPinnedMessages(userId: string, conversationId: string): Promise<{ id: string; text: string }[]> {
+  return latestPinned(userId, conversationId);
 }
