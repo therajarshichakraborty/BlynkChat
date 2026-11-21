@@ -1,9 +1,9 @@
-import type { InputHTMLAttributes } from "react";
+import type { ComponentProps } from "react";
 import { SearchIcon } from "@/components/icons/search-icon";
 import { cn } from "@/lib/utils/cn";
 import { Kbd } from "./kbd";
 
-type SearchInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "size"> & {
+type SearchInputProps = Omit<ComponentProps<"input">, "type" | "size"> & {
   label: string;
   shortcut?: string;
   size?: "md" | "lg";
