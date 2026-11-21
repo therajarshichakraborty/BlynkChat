@@ -1,0 +1,125 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "./generated"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Tone {
+  BLUE
+  SKY
+  INDIGO
+  VIOLET
+  PURPLE
+  PINK
+  ORANGE
+  AMBER
+  TEAL
+  EMERALD
+  CYAN
+  SLATE
+}
+
+enum Audience {
+  EVERYONE
+  CONTACTS
+  NOBODY
+}
+
+enum ThemePreference {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+model User {
+  id              String        @id @default(cuid())
+  name            String
+  email           String        @unique
+  emailVerified   Boolean       @default(false)
+  image           String?
+  username        String        @unique
+  displayUsername String?
+  bio             String        @default("")
+  title           String        @default("")
+  location        String        @default("")
+  tone            Tone          @default(BLUE)
+  lastSeenAt      DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  sessions        Session[]
+  accounts        Account[]
+  settings        UserSettings?
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model UserSettings {
+  id                  String          @id @default(cuid())
+  userId              String          @unique
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastSeenVisibility  Audience        @default(EVERYONE)
+  photoVisibility     Audience        @default(EVERYONE)
+  readReceipts        Boolean         @default(true)
+  typingIndicator     Boolean         @default(true)
+  approveGroupInvites Boolean         @default(false)
+  notifyDirect        Boolean         @default(true)
+  notifyGroups        Boolean         @default(true)
+  notifyMentionsOnly  Boolean         @default(true)
+  notifySounds        Boolean         @default(false)
+  theme               ThemePreference @default(SYSTEM)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@map("user_settings")
+}
