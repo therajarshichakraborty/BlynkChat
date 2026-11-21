@@ -4,6 +4,7 @@ import type { MessagePage, MessageView } from "@/types/message";
 import { db } from "../db";
 import { forbidden, invalid, notFound } from "../errors";
 import { assertWithinLimit } from "../rate-limit";
+import { publish, toConversation, toUsers } from "../realtime/publish";
 import { messageInclude, toMessageView } from "../views/messages";
 import { blockStatus } from "./blocks";
 import { activeMemberIds, isAdminRole, requireMembership, visibleMessagesWhere } from "./conversations";
@@ -71,7 +72,10 @@ export async function listThreadReplies(userId: string, rootId: string): Promise
 }
 
 export async function getMessageView(userId: string, messageId: string): Promise<MessageView> {
-  const row = await db.message.findUnique({ where: { id: messageId }, include: messageInclude(userId) });
+  const row = await db.message.findFirst({
+    where: { id: messageId, hiddenFor: { none: { userId } } },
+    include: messageInclude(userId),
+  });
   if (!row) throw notFound("That message could not be found.");
   await requireMembership(userId, row.conversationId);
   return toMessageView(row, userId);
@@ -176,6 +180,23 @@ export async function sendMessage(userId: string, input: SendMessageInput): Prom
     return tx.message.findUniqueOrThrow({ where: { id: message.id }, include: messageInclude(userId) });
   });
 
+  await publish(
+    "message.created",
+    {
+      conversationId: input.conversationId,
+      messageId: created.id,
+      senderId: userId,
+      threadRootId: created.threadRootId,
+    },
+    toConversation(input.conversationId),
+  );
+  if (created.threadRootId) {
+    await publish(
+      "message.updated",
+      { conversationId: input.conversationId, messageId: created.threadRootId },
+      toConversation(input.conversationId),
+    );
+  }
   return { message: toMessageView(created, userId), recipients };
 }
 
@@ -203,6 +224,11 @@ export async function editMessage(userId: string, messageId: string, body: strin
     data: { body: body.trim(), editedAt: new Date() },
     include: messageInclude(userId),
   });
+  await publish(
+    "message.updated",
+    { conversationId: message.conversationId, messageId },
+    toConversation(message.conversationId),
+  );
   return { message: toMessageView(updated, userId), recipients: await activeMemberIds(message.conversationId) };
 }
 
@@ -224,6 +250,11 @@ export async function deleteMessageForEveryone(userId: string, messageId: string
       include: messageInclude(userId),
     });
   });
+  await publish(
+    "message.deleted",
+    { conversationId: message.conversationId, messageId },
+    toConversation(message.conversationId),
+  );
   return { message: toMessageView(updated, userId), recipients: await activeMemberIds(message.conversationId) };
 }
 
@@ -234,5 +265,6 @@ export async function deleteMessageForMe(userId: string, messageId: string) {
     create: { messageId, userId },
     update: {},
   });
+  await publish("message.deleted", { conversationId: message.conversationId, messageId }, toUsers([userId]));
   return { messageId, conversationId: message.conversationId };
 }
