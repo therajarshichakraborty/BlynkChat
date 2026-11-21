@@ -1,5 +1,7 @@
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+export const usernameRules = { min: 3, max: 20, pattern: /^[a-z0-9_]+$/ };
+
 export type LoginValues = {
   email: string;
   password: string;
@@ -39,8 +41,8 @@ export type SignupValues = {
 };
 
 export function validateUsername(value: string) {
-  if (value.length < 3 || value.length > 20) return "Use 3 to 20 characters.";
-  if (!/^[a-z0-9_]+$/.test(value)) return "Use lowercase letters, numbers and underscores only.";
+  if (value.length < usernameRules.min || value.length > usernameRules.max) return "Use 3 to 20 characters.";
+  if (!usernameRules.pattern.test(value)) return "Use lowercase letters, numbers and underscores only.";
   return undefined;
 }
 
