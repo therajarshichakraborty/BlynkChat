@@ -40,7 +40,18 @@ export const signupSchema = z
     message: "Passwords do not match.",
   });
 
+export const resetPasswordSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Confirm your password."),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match.",
+  });
+
 export type LoginValues = z.input<typeof loginSchema>;
+export type ResetPasswordValues = z.input<typeof resetPasswordSchema>;
 export type SignupValues = z.input<typeof signupSchema>;
 
 export function isEmail(value: string) {

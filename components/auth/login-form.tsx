@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import { PasswordField } from "@/components/ui/password-field";
@@ -72,6 +73,11 @@ export function LoginForm() {
         label="Password"
         autoComplete="current-password"
         placeholder="Your password"
+        labelAction={
+          <Link href="/forgot-password" className="text-sm font-medium text-accent-text hover:underline">
+            Forgot password?
+          </Link>
+        }
         value={values.password}
         onChange={(event) => update("password", event.target.value)}
         error={errors.password}
