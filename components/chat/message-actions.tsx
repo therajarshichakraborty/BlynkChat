@@ -2,14 +2,19 @@
 
 import type { ReactNode } from "react";
 import { CopyIcon } from "@/components/icons/copy-icon";
+import { ForwardIcon } from "@/components/icons/forward-icon";
+import { SmilePlusIcon } from "@/components/icons/smile-plus-icon";
+import { StarIcon } from "@/components/icons/star-icon";
 import { MoreHorizontalIcon } from "@/components/icons/more-horizontal-icon";
 import { PencilIcon } from "@/components/icons/pencil-icon";
 import { RefreshIcon } from "@/components/icons/refresh-icon";
 import { ReplyIcon } from "@/components/icons/reply-icon";
 import { TrashIcon } from "@/components/icons/trash-icon";
 import { cn } from "@/lib/utils/cn";
+import { quickReactions } from "@/lib/validation/reactions";
 import { ActionMenu, type MenuItem } from "./action-menu";
 import { useConversation } from "./conversation-provider";
+import { EmojiPicker } from "./emoji-picker";
 import type { ThreadMessage } from "./thread-state";
 
 const editWindowMs = 15 * 60 * 1000;
@@ -27,7 +32,8 @@ function within(createdAt: string, windowMs: number) {
 }
 
 export function MessageActions({ message, outgoing, extraItems = [], leading }: MessageActionsProps) {
-  const { conversation, setReplyingTo, setEditing, remove, retry, dispatch, notify } = useConversation();
+  const { conversation, setReplyingTo, setEditing, remove, retry, dispatch, notify, react, star, setForwarding } =
+    useConversation();
   const admin = conversation.myRole !== "member" && conversation.kind !== "direct";
 
   if (message.pending === "sending") return null;
@@ -68,6 +74,14 @@ export function MessageActions({ message, outgoing, extraItems = [], leading }: 
         },
       });
     }
+    items.push({
+      label: message.starred ? "Unstar" : "Star",
+      icon: <StarIcon size={16} />,
+      onSelect: () => star(message),
+    });
+    if (message.kind !== "poll") {
+      items.push({ label: "Forward", icon: <ForwardIcon size={16} />, onSelect: () => setForwarding(message) });
+    }
     items.push(...extraItems);
     if (outgoing && message.body && message.kind === "text" && within(message.createdAt, editWindowMs)) {
       items.push({ label: "Edit", icon: <PencilIcon size={16} />, onSelect: () => setEditing(message) });
@@ -91,6 +105,15 @@ export function MessageActions({ message, outgoing, extraItems = [], leading }: 
       )}
     >
       {leading}
+      {!message.deleted && conversation.blocked === "none" && message.kind !== "system" ? (
+        <EmojiPicker
+          label="React"
+          icon={<SmilePlusIcon size={16} />}
+          onPick={(emoji) => react(message, emoji)}
+          emojis={quickReactions}
+          align={outgoing ? "end" : "start"}
+        />
+      ) : null}
       {!message.deleted && conversation.canPost ? (
         <button
           type="button"

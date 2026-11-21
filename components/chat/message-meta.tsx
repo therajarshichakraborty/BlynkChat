@@ -2,6 +2,7 @@ import { AlertCircleIcon } from "@/components/icons/alert-circle-icon";
 import { CheckCheckIcon } from "@/components/icons/check-check-icon";
 import { CheckIcon } from "@/components/icons/check-icon";
 import { ClockIcon } from "@/components/icons/clock-icon";
+import { StarIcon } from "@/components/icons/star-icon";
 import { cn } from "@/lib/utils/cn";
 import type { DeliveryStatus } from "@/types/message";
 
@@ -10,6 +11,7 @@ type MessageMetaProps = {
   dateTime: string;
   status?: DeliveryStatus;
   edited?: boolean;
+  starred?: boolean;
   outgoing: boolean;
   className?: string;
 };
@@ -22,7 +24,7 @@ const statusLabel: Record<DeliveryStatus, string> = {
   failed: "Not sent",
 };
 
-export function MessageMeta({ time, dateTime, status, edited = false, outgoing, className }: MessageMetaProps) {
+export function MessageMeta({ time, dateTime, status, edited = false, starred = false, outgoing, className }: MessageMetaProps) {
   return (
     <span
       className={cn(
@@ -31,6 +33,7 @@ export function MessageMeta({ time, dateTime, status, edited = false, outgoing, 
         className,
       )}
     >
+      {starred ? <StarIcon size={11} fill="currentColor" aria-label="Starred" role="img" aria-hidden={false} /> : null}
       {edited ? <span>edited</span> : null}
       <time dateTime={dateTime}>{time}</time>
       {outgoing && status ? (

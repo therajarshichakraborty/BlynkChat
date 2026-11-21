@@ -92,3 +92,8 @@ export type ReceiptView = {
   lastReadAt: string | null;
   lastDeliveredAt: string | null;
 };
+
+export type StarredItem = {
+  message: MessageView;
+  conversation: { id: string; title: string; initials: string; tone: Tone; href: string };
+};

@@ -52,7 +52,7 @@ export function Rail({ me: user }: RailProps) {
       >
         <PhoneIcon size={22} />
       </span>
-      <NavLink href="/chats?filter=starred" match="/starred" label="Starred" variant="rail">
+      <NavLink href="/starred" match="/starred" label="Starred" variant="rail">
         <StarIcon size={22} />
       </NavLink>
       <div className="mt-auto flex flex-col items-center gap-2">

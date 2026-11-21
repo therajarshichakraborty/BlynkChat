@@ -21,6 +21,7 @@ import {
   loadOlderMessages,
   sendMessage,
 } from "@/lib/actions/messages";
+import { toggleReaction, toggleStar } from "@/lib/actions/reactions";
 import { useTypists } from "@/lib/hooks/use-typists";
 import { useRealtime } from "@/lib/realtime-client";
 import { sendTypingSignal, typingLabel as labelFor, typingThrottleMs, type Typist } from "@/lib/utils/typing";
@@ -55,6 +56,10 @@ type ConversationContextValue = {
   retry: (message: ThreadMessage) => void;
   saveEdit: (messageId: string, body: string) => void;
   remove: (messageId: string, scope: "me" | "everyone") => void;
+  react: (message: MessageView, emoji: string) => void;
+  star: (message: MessageView) => void;
+  forwarding: MessageView | null;
+  setForwarding: (message: MessageView | null) => void;
 };
 
 const ConversationContext = createContext<ConversationContextValue | null>(null);
@@ -87,6 +92,7 @@ export function ConversationProvider({ conversation, me, initialPage, children }
   const [presence, setPresence] = useState(conversation.presence);
   const [replyingTo, setReplyingTo] = useState<MessageView | null>(null);
   const [editing, setEditing] = useState<MessageView | null>(null);
+  const [forwarding, setForwarding] = useState<MessageView | null>(null);
   const { typists, add: addTypist, remove: removeTypist } = useTypists();
   const typingLabel = labelFor(typists, conversation.kind === "direct");
   const lastTypingSignal = useRef(0);
@@ -253,6 +259,46 @@ export function ConversationProvider({ conversation, me, initialPage, children }
     });
   }
 
+  function react(message: MessageView, emoji: string) {
+    const current = message.reactions.find((reaction) => reaction.emoji === emoji);
+    const reactions = current
+      ? message.reactions
+          .map((reaction) =>
+            reaction.emoji === emoji
+              ? { ...reaction, mine: !reaction.mine, count: reaction.count + (reaction.mine ? -1 : 1) }
+              : reaction,
+          )
+          .filter((reaction) => reaction.count > 0)
+      : [...message.reactions, { emoji, count: 1, mine: true }];
+    startTransition(async () => {
+      dispatch({ type: "upsert", message: { ...message, reactions } });
+      const result = await toggleReaction({ messageId: message.id, emoji });
+      startTransition(() => {
+        if (result.ok) dispatch({ type: "upsert", message: result.data });
+        else {
+          dispatch({ type: "upsert", message });
+          show(result.error.message);
+        }
+      });
+    });
+  }
+
+  function star(message: MessageView) {
+    startTransition(async () => {
+      dispatch({ type: "upsert", message: { ...message, starred: !message.starred } });
+      const result = await toggleStar({ messageId: message.id });
+      startTransition(() => {
+        if (result.ok) {
+          dispatch({ type: "upsert", message: { ...message, starred: result.data.starred } });
+          show(result.data.starred ? "Message starred" : "Message unstarred", "success");
+        } else {
+          dispatch({ type: "upsert", message });
+          show(result.error.message);
+        }
+      });
+    });
+  }
+
   return (
     <ConversationContext
       value={{
@@ -277,6 +323,10 @@ export function ConversationProvider({ conversation, me, initialPage, children }
         retry,
         saveEdit,
         remove,
+        react,
+        star,
+        forwarding,
+        setForwarding,
       }}
     >
       {children}

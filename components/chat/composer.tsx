@@ -7,6 +7,7 @@ import { PlusIcon } from "@/components/icons/plus-icon";
 import { SendIcon } from "@/components/icons/send-icon";
 import { SmileIcon } from "@/components/icons/smile-icon";
 import { IconButton } from "@/components/ui/icon-button";
+import { EmojiPicker } from "./emoji-picker";
 import { messageBodyLimit } from "@/lib/validation/messages";
 
 type ComposerProps = {
@@ -91,9 +92,13 @@ export function Composer({
         />
         {tools ? null : (
           <>
-            <IconButton label="Emoji">
-              <SmileIcon size={20} />
-            </IconButton>
+            <EmojiPicker
+              label="Emoji"
+              icon={<SmileIcon size={20} />}
+              onPick={(emoji) => setValue((current) => `${current}${emoji}`)}
+              align="end"
+              buttonClassName="size-10"
+            />
             <IconButton label="Attach file" className="max-sm:hidden">
               <PaperclipIcon size={20} />
             </IconButton>

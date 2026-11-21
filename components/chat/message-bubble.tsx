@@ -44,6 +44,7 @@ export function MessageBubble({
       dateTime={message.createdAt}
       status={status}
       edited={message.editedAt !== null && !message.deleted}
+      starred={message.starred && !message.deleted}
       outgoing={outgoing}
     />
   );

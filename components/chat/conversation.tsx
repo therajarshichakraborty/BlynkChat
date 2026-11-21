@@ -6,6 +6,7 @@ import { useTimeZone } from "@/components/shell/time-zone";
 import { Spinner } from "@/components/ui/spinner";
 import { deliveryStatus } from "@/lib/utils/messages";
 import { ConversationComposer } from "./conversation-composer";
+import { ForwardDialog } from "./forward-dialog";
 import { useConversation } from "./conversation-provider";
 import { MessageActions } from "./message-actions";
 import { MessageBubble } from "./message-bubble";
@@ -23,7 +24,8 @@ function firstUnread(messages: ThreadMessage[], lastReadAt: string | null, meId:
 }
 
 export function Conversation() {
-  const { conversation, me, state, messages, loadOlder, loadingOlder, typists } = useConversation();
+  const { conversation, me, state, messages, loadOlder, loadingOlder, typists, react, forwarding, setForwarding, notify } =
+    useConversation();
   const timeZone = useTimeZone();
   const scrollRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -126,6 +128,9 @@ export function Conversation() {
         highlighted={highlighted === message.id}
         status={outgoing ? (message.pending ?? deliveryStatus(message, state.receipts)) : undefined}
         onReplyClick={jumpTo}
+        onToggleReaction={
+          conversation.blocked === "none" && !message.pending ? (emoji) => react(message, emoji) : undefined
+        }
         actions={<MessageActions message={message} outgoing={outgoing} />}
       />
     );
@@ -160,6 +165,9 @@ export function Conversation() {
       <div className="px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))] md:px-6 md:pb-5">
         <ConversationComposer />
       </div>
+      {forwarding ? (
+        <ForwardDialog messageId={forwarding.id} onClose={() => setForwarding(null)} onDone={notify} />
+      ) : null}
     </>
   );
 }

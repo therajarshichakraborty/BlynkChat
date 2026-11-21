@@ -81,10 +81,10 @@ export async function getMessageView(userId: string, messageId: string): Promise
   return toMessageView(row, userId);
 }
 
-export async function assertCanPost(userId: string, conversationId: string) {
+export async function assertCanPost(userId: string, conversationId: string, options: { reacting?: boolean } = {}) {
   const member = await requireMembership(userId, conversationId);
   const { conversation } = member;
-  if (conversation.onlyAdminsCanPost && !isAdminRole(member.role)) {
+  if (!options.reacting && conversation.onlyAdminsCanPost && !isAdminRole(member.role)) {
     throw forbidden("Only admins can send messages here.");
   }
   if (conversation.type === "DIRECT") {
@@ -267,4 +267,69 @@ export async function deleteMessageForMe(userId: string, messageId: string) {
   });
   await publish("message.deleted", { conversationId: message.conversationId, messageId }, toUsers([userId]));
   return { messageId, conversationId: message.conversationId };
+}
+
+export async function forwardMessage(userId: string, messageId: string, conversationIds: string[]) {
+  const source = await db.message.findUnique({
+    where: { id: messageId },
+    include: { attachments: true },
+  });
+  if (!source || source.deletedAt) throw notFound("That message could not be found.");
+  await requireMembership(userId, source.conversationId);
+  if (source.kind === "SYSTEM" || source.kind === "POLL") throw invalid("This message can't be forwarded.");
+
+  const targets = [...new Set(conversationIds)];
+  for (const conversationId of targets) await assertCanPost(userId, conversationId);
+  assertWithinLimit("send", userId);
+
+  let count = 0;
+  for (const conversationId of targets) {
+    const target = await db.conversation.findUniqueOrThrow({
+      where: { id: conversationId },
+      select: { disappearingSeconds: true },
+    });
+    const now = new Date();
+    const created = await db.$transaction(async (tx) => {
+      const message = await tx.message.create({
+        data: {
+          conversationId,
+          senderId: userId,
+          clientId: `fwd-${messageId}-${conversationId}-${now.getTime()}`,
+          kind: source.kind,
+          body: source.body,
+          forwarded: true,
+          expiresAt: target.disappearingSeconds ? new Date(now.getTime() + target.disappearingSeconds * 1000) : null,
+          createdAt: now,
+          attachments: {
+            create: source.attachments.map((attachment) => ({
+              uploaderId: userId,
+              kind: attachment.kind,
+              mime: attachment.mime,
+              size: attachment.size,
+              name: attachment.name,
+              path: attachment.path,
+              width: attachment.width,
+              height: attachment.height,
+              durationMs: attachment.durationMs,
+              waveform: attachment.waveform ?? undefined,
+            })),
+          },
+        },
+        select: { id: true },
+      });
+      await tx.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: now } });
+      await tx.conversationMember.updateMany({
+        where: { conversationId, userId },
+        data: { lastReadMessageId: message.id, lastReadAt: now, archivedAt: null },
+      });
+      return message;
+    });
+    count += 1;
+    await publish(
+      "message.created",
+      { conversationId, messageId: created.id, senderId: userId, threadRootId: null },
+      toConversation(conversationId),
+    );
+  }
+  return { count };
 }
