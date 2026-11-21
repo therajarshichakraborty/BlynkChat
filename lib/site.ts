@@ -1,4 +1,8 @@
+import type { Route } from "next";
+
 export const siteName = "Relay";
+
+export const afterAuthRoute: Route = "/";
 
 export const siteDescription =
   "Real-time chats, group rooms and communities in one beautifully fast app. End-to-end encrypted, synced across mobile, iPad and desktop.";
