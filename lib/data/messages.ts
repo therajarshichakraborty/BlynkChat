@@ -1,13 +1,4 @@
-import { clockTime } from "@/lib/utils/time";
-import type { Message } from "@/types/chat";
 import type { RoomMessage } from "@/types/community";
-
-type SendMessageInput = {
-  id: string;
-  chatId: string;
-  authorId: string;
-  body: string;
-};
 
 type SendRoomMessageInput = {
   id: string;
@@ -15,14 +6,14 @@ type SendRoomMessageInput = {
   body: string;
 };
 
+function clockTime(date = new Date()) {
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
 function delay<T>(value: T): Promise<T> {
   return new Promise((resolve) => {
     setTimeout(() => resolve(value), 600);
   });
-}
-
-export function sendMessage(input: SendMessageInput): Promise<Message> {
-  return delay({ ...input, day: "Today", time: clockTime(), status: "sent" });
 }
 
 export function sendRoomMessage(input: SendRoomMessageInput): Promise<RoomMessage> {

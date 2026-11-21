@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function ChatLoading() {
+export function ConversationSkeleton() {
   return (
     <div className="flex min-w-0 flex-1 flex-col" aria-busy="true" aria-label="Loading conversation">
       <div className="flex h-18 items-center gap-3 border-b border-line px-6">

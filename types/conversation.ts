@@ -1,4 +1,4 @@
-import type { ReceiptView } from "./message";
+import type { AttachmentView, ReceiptView } from "./message";
 import type { Tone } from "./tone";
 
 export type ChatKind = "direct" | "group" | "room";
@@ -75,4 +75,27 @@ export type ConversationView = {
   receipts: ReceiptView[];
   lastReadAt: string | null;
   community: { slug: string; name: string } | null;
+};
+
+export type GroupLink = {
+  id: string;
+  title: string;
+  initials: string;
+  tone: Tone;
+  memberCount: number;
+  href: string;
+};
+
+export type MemberView = {
+  person: PersonView;
+  role: MemberRoleView;
+  online: boolean;
+};
+
+export type ConversationDetails = {
+  media: AttachmentView[];
+  mediaCount: number;
+  files: AttachmentView[];
+  commonGroups: GroupLink[];
+  members: MemberView[];
 };

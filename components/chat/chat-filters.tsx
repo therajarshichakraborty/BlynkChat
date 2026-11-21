@@ -1,7 +1,7 @@
 import type { Route } from "next";
 import { ChipLink } from "@/components/ui/chip-link";
 import { chatFilters, chatListQuery } from "@/lib/utils/chat-filters";
-import type { ChatFilter } from "@/types/chat";
+import type { ChatFilter } from "@/types/conversation";
 
 type ChatFiltersProps = {
   pathname: string;

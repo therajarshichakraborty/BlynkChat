@@ -1,17 +1,21 @@
-import { toneGradient } from "@/lib/utils/tone";
-import { cn } from "@/lib/utils/cn";
-import type { ImageAttachment as ImageAttachmentData } from "@/types/chat";
+import Image from "next/image";
+import type { AttachmentView } from "@/types/message";
 
 type ImageAttachmentProps = {
-  image: ImageAttachmentData;
+  image: AttachmentView;
 };
 
 export function ImageAttachment({ image }: ImageAttachmentProps) {
   return (
-    <span
-      role="img"
-      aria-label={image.alt}
-      className={cn("block aspect-4/3 w-64 max-w-full rounded-lg", toneGradient(image.tone))}
-    />
+    <a href={image.url} target="_blank" rel="noreferrer" className="block w-64 max-w-full overflow-hidden rounded-lg">
+      <Image
+        src={image.url}
+        alt={image.name}
+        width={image.width ?? 512}
+        height={image.height ?? 384}
+        unoptimized
+        className="aspect-4/3 h-auto w-full bg-surface object-cover"
+      />
+    </a>
   );
 }

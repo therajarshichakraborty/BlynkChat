@@ -2,6 +2,7 @@ import "server-only";
 import type { MemberRole, Prisma } from "@/prisma/generated/client";
 import { initialsFor } from "@/lib/utils/initials";
 import type {
+  ConversationDetails,
   ChatFilter,
   ChatKind,
   ChatPreview,
@@ -11,6 +12,7 @@ import type {
 } from "@/types/conversation";
 import { db } from "../db";
 import { forbidden, notFound } from "../errors";
+import { toAttachment } from "../views/messages";
 import { personDetailSelect, personSelect, toPerson, toTone } from "../views/people";
 import { blockStatus } from "./blocks";
 
@@ -213,8 +215,9 @@ export async function getConversationView(userId: string, conversationId: string
     where: { id: conversationId },
     include: {
       community: { select: { slug: true, name: true } },
+      _count: { select: { members: { where: { leftAt: null } } } },
       members: {
-        where: { leftAt: null },
+        where: membership.conversation.type === "ROOM" ? { leftAt: null, userId } : { leftAt: null },
         select: {
           userId: true,
           lastReadAt: true,
@@ -255,7 +258,7 @@ export async function getConversationView(userId: string, conversationId: string
           lastSeenAt: lastSeenHidden ? null : (peerMember.user.lastSeenAt?.toISOString() ?? null),
         }
       : null,
-    memberCount: conversation.members.length,
+    memberCount: conversation._count.members,
     myRole: toRoleView(membership.role),
     canPost: blocked === "none" && (!conversation.onlyAdminsCanPost || admin),
     blocked,
@@ -267,14 +270,15 @@ export async function getConversationView(userId: string, conversationId: string
     disappearingSeconds: conversation.disappearingSeconds,
     inviteCode: admin && kind === "group" ? conversation.inviteCode : null,
     receiptsEnabled,
-    receipts: receiptsEnabled
-      ? others
-          .filter((member) => member.user.settings?.readReceipts ?? true)
-          .map((member) => ({
-            userId: member.userId,
-            lastReadAt: member.lastReadAt?.toISOString() ?? null,
-            lastDeliveredAt: member.lastDeliveredAt?.toISOString() ?? null,
-          }))
+    receipts: blocked === "none"
+      ? others.map((member) => ({
+          userId: member.userId,
+          lastReadAt:
+            receiptsEnabled && (member.user.settings?.readReceipts ?? true)
+              ? (member.lastReadAt?.toISOString() ?? null)
+              : null,
+          lastDeliveredAt: member.lastDeliveredAt?.toISOString() ?? null,
+        }))
       : [],
     lastReadAt: membership.lastReadAt?.toISOString() ?? null,
     community: conversation.community,
@@ -311,4 +315,61 @@ export async function getOrCreateDirect(userId: string, otherId: string) {
     select: { id: true },
   });
   return created.id;
+}
+
+export async function getConversationDetails(
+  userId: string,
+  conversationId: string,
+  isOnline: (userId: string) => boolean = () => false,
+): Promise<ConversationDetails> {
+  const membership = await requireMembership(userId, conversationId);
+  const visible = { message: { conversationId, deletedAt: null, hiddenFor: { none: { userId } } } };
+  const [media, mediaCount, files, members] = await Promise.all([
+    db.attachment.findMany({ where: { ...visible, kind: "IMAGE" }, orderBy: { createdAt: "desc" }, take: 6 }),
+    db.attachment.count({ where: visible }),
+    db.attachment.findMany({ where: { ...visible, kind: "FILE" }, orderBy: { createdAt: "desc" }, take: 4 }),
+    db.conversationMember.findMany({
+      where: { conversationId, leftAt: null },
+      orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
+      take: 200,
+      select: { role: true, user: { select: personDetailSelect } },
+    }),
+  ]);
+
+  let commonGroups: ConversationDetails["commonGroups"] = [];
+  const peer = membership.conversation.type === "DIRECT" ? members.find((member) => member.user.id !== userId) : undefined;
+  if (peer) {
+    const groups = await db.conversation.findMany({
+      where: {
+        type: "GROUP",
+        AND: [
+          { members: { some: { userId, leftAt: null } } },
+          { members: { some: { userId: peer.user.id, leftAt: null } } },
+        ],
+      },
+      orderBy: { lastMessageAt: "desc" },
+      take: 5,
+      select: { id: true, title: true, tone: true, _count: { select: { members: { where: { leftAt: null } } } } },
+    });
+    commonGroups = groups.map((group) => ({
+      id: group.id,
+      title: group.title ?? "Group",
+      initials: initialsFor(group.title ?? "Group"),
+      tone: toTone(group.tone),
+      memberCount: group._count.members,
+      href: `/chats/${group.id}`,
+    }));
+  }
+
+  return {
+    media: media.map(toAttachment),
+    mediaCount,
+    files: files.map(toAttachment),
+    commonGroups,
+    members: members.map((member) => ({
+      person: toPerson(member.user),
+      role: toRoleView(member.role),
+      online: isOnline(member.user.id),
+    })),
+  };
 }

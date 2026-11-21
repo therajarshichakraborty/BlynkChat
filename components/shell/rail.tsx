@@ -9,13 +9,16 @@ import { UsersIcon } from "@/components/icons/users-icon";
 import { Avatar } from "@/components/ui/avatar";
 import { LogoMark } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { getUnreadTotal } from "@/lib/data/chats";
-import { getCurrentUser } from "@/lib/data/users";
 import { roomHref } from "@/lib/utils/community-links";
+import type { PersonView } from "@/types/conversation";
 import { NavLink } from "./nav-link";
 
-export function Rail() {
-  const user = getCurrentUser();
+type RailProps = {
+  me: PersonView;
+  unread: number;
+};
+
+export function Rail({ me: user, unread }: RailProps) {
 
   return (
     <nav
@@ -25,7 +28,7 @@ export function Rail() {
       <Link href="/" aria-label="Relay home" className="mb-4 rounded-lg">
         <LogoMark />
       </Link>
-      <NavLink href="/chats" match="/chats" label="Chats" variant="rail" badge={getUnreadTotal()}>
+      <NavLink href="/chats" match="/chats" label="Chats" variant="rail" badge={unread}>
         <MessageCircleIcon size={22} />
       </NavLink>
       <NavLink

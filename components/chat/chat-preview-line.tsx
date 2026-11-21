@@ -1,35 +1,39 @@
 import { CameraIcon } from "@/components/icons/camera-icon";
-import { CheckCheckIcon } from "@/components/icons/check-check-icon";
-import { CheckIcon } from "@/components/icons/check-icon";
+import { ChartColumnIcon } from "@/components/icons/chart-column-icon";
+import { FileTextIcon } from "@/components/icons/file-text-icon";
 import { MicIcon } from "@/components/icons/mic-icon";
 import { cn } from "@/lib/utils/cn";
-import type { Chat } from "@/types/chat";
+import type { ChatSummary } from "@/types/conversation";
 
 type ChatPreviewLineProps = {
-  chat: Chat;
+  chat: ChatSummary;
+  typingLabel?: string;
 };
 
-export function ChatPreviewLine({ chat }: ChatPreviewLineProps) {
-  if (chat.typing) {
-    return <span className="truncate font-medium text-accent-text">typing…</span>;
+const kindIcons = {
+  image: CameraIcon,
+  file: FileTextIcon,
+  voice: MicIcon,
+  poll: ChartColumnIcon,
+} as const;
+
+export function ChatPreviewLine({ chat, typingLabel }: ChatPreviewLineProps) {
+  if (typingLabel) {
+    return <span className="truncate font-medium text-accent-text">{typingLabel}</span>;
   }
 
   const { preview } = chat;
-  const prefix = preview.fromMe && chat.kind !== "direct" ? "You: " : preview.author ? `${preview.author}: ` : "";
+  if (!preview) {
+    return <span className="truncate text-muted">No messages yet</span>;
+  }
+
+  const KindIcon = preview.kind in kindIcons ? kindIcons[preview.kind as keyof typeof kindIcons] : null;
 
   return (
     <span className="flex min-w-0 items-center gap-1.5 text-muted">
-      {preview.fromMe ? (
-        preview.status === "read" ? (
-          <CheckCheckIcon size={16} className="shrink-0 text-accent-text" aria-hidden={false} role="img" aria-label="Read" />
-        ) : (
-          <CheckIcon size={16} className="shrink-0" aria-hidden={false} role="img" aria-label="Sent" />
-        )
-      ) : null}
-      {preview.kind === "voice" ? <MicIcon size={15} className="shrink-0 text-accent-text" /> : null}
-      {preview.kind === "photo" ? <CameraIcon size={15} className="shrink-0" /> : null}
-      <span className={cn("truncate", chat.unread > 0 && "text-fg")}>
-        {prefix}
+      {KindIcon ? <KindIcon size={15} className="shrink-0 text-accent-text" /> : null}
+      <span className={cn("truncate", chat.unread > 0 && "text-fg", preview.kind === "deleted" && "italic")}>
+        {preview.author ? `${preview.author}: ` : ""}
         {preview.text}
       </span>
     </span>

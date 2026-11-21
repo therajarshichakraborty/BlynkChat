@@ -1,4 +1,8 @@
 import { currentUserId, users } from "@/lib/mock/users";
+import "server-only";
+import { cache } from "react";
+import { getMe } from "@/lib/server/services/users";
+import type { PersonView } from "@/types/conversation";
 import type { User } from "@/types/user";
 
 const usersById = new Map(users.map((user) => [user.id, user]));
@@ -16,3 +20,5 @@ export function getCurrentUser(): User {
 export function getContacts(): User[] {
   return users.filter((user) => user.id !== currentUserId);
 }
+
+export const getProfile = cache((userId: string): Promise<PersonView> => getMe(userId));
