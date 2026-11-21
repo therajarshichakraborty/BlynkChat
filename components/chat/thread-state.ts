@@ -10,6 +10,7 @@ export type ThreadState = {
 
 export type ThreadAction =
   | { type: "older"; page: MessagePage }
+  | { type: "latest"; page: MessagePage }
   | { type: "upsert"; message: MessageView }
   | { type: "failed"; message: ThreadMessage }
   | { type: "discard"; clientId: string }
@@ -37,6 +38,8 @@ export function threadReducer(state: ThreadState, action: ThreadAction): ThreadS
       const fresh = action.page.messages.filter((message) => !known.has(message.id));
       return { ...state, messages: [...fresh, ...state.messages], nextCursor: action.page.nextCursor };
     }
+    case "latest":
+      return { ...state, messages: action.page.messages.reduce(upsert, state.messages) };
     case "upsert":
       return { ...state, messages: upsert(state.messages, action.message) };
     case "failed":

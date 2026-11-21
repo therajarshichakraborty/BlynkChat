@@ -10,6 +10,8 @@ export const loadOlderSchema = z.object({
   cursor: idSchema,
 });
 
+export const conversationIdSchema = z.object({ conversationId: idSchema });
+
 export const messageIdSchema = z.object({ messageId: idSchema });
 
 export const sendMessageSchema = z.object({

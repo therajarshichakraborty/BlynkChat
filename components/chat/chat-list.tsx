@@ -2,10 +2,12 @@
 
 import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { startTransition, useEffect, useRef, useState, useTransition } from "react";
 import { PinIcon } from "@/components/icons/pin-icon";
 import { SearchIcon } from "@/components/icons/search-icon";
 import { EmptyState } from "@/components/ui/empty-state";
+import { loadChatList } from "@/lib/actions/chats";
+import { useRealtime } from "@/lib/realtime-client";
 import { chatListQuery } from "@/lib/utils/chat-filters";
 import { cn } from "@/lib/utils/cn";
 import type { ChatFilter, ChatSummary } from "@/types/conversation";
@@ -20,16 +22,50 @@ type ChatListProps = {
   query: string;
   unreadCount: number;
   activeId: string | null;
+  meId: string;
 };
 
-export function ChatList({ chats, filter, query: initialQuery, unreadCount, activeId }: ChatListProps) {
+const refreshEvents = new Set(["message.created", "message.deleted", "conversation.updated", "member.changed"]);
+
+export function ChatList({ chats: initialChats, filter, query: initialQuery, unreadCount: initialUnread, activeId, meId }: ChatListProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState(initialQuery);
   const [searching, startSearch] = useTransition();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  useEffect(() => () => clearTimeout(timer.current), []);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [source, setSource] = useState(initialChats);
+  const [live, setLive] = useState({ chats: initialChats, unread: initialUnread });
+  if (source !== initialChats) {
+    setSource(initialChats);
+    setLive({ chats: initialChats, unread: initialUnread });
+  }
+  const { chats, unread: unreadCount } = live;
+
+  useEffect(
+    () => () => {
+      clearTimeout(timer.current);
+      clearTimeout(refreshTimer.current);
+    },
+    [],
+  );
+
+  useRealtime((event) => {
+    const relevant =
+      refreshEvents.has(event.type) ||
+      (event.type === "receipt.updated" && event.data.userId === meId) ||
+      (event.type === "message.updated" && chats.some((chat) => chat.id === event.data.conversationId));
+    if (!relevant) return;
+    if (event.type === "message.created" && event.data.threadRootId) return;
+    clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(() => {
+      startTransition(async () => {
+        const result = await loadChatList({ filter, query: initialQuery });
+        if (result.ok) startTransition(() => setLive(result.data));
+      });
+    }, 250);
+  });
 
   const search = chatListQuery(filter, initialQuery);
   const grouped = filter === "all" && !initialQuery.trim();

@@ -24,6 +24,7 @@ export async function ChatListPane({ userId, filter: rawFilter, query = "", acti
       query={query}
       unreadCount={unreadCount}
       activeId={activeId}
+      meId={userId}
     />
   );
 }

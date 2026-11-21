@@ -12,7 +12,15 @@ import {
   type ReactNode,
 } from "react";
 import { useToast } from "@/components/ui/toast";
-import { deleteMessage, editMessage, loadOlderMessages, sendMessage } from "@/lib/actions/messages";
+import {
+  deleteMessage,
+  editMessage,
+  fetchMessage,
+  loadLatestMessages,
+  loadOlderMessages,
+  sendMessage,
+} from "@/lib/actions/messages";
+import { useRealtime } from "@/lib/realtime-client";
 import type { ConversationView, PresenceView } from "@/types/conversation";
 import type { AttachmentView, MessagePage, MessageView, SenderView } from "@/types/message";
 import { threadReducer, type ThreadAction, type ThreadMessage, type ThreadState } from "./thread-state";
@@ -85,6 +93,43 @@ export function ConversationProvider({ conversation, me, initialPage, children }
       else show(result.error.message);
     });
   }, [conversation.id, cursor, show]);
+
+  function refreshMessage(messageId: string) {
+    startTransition(async () => {
+      const result = await fetchMessage({ messageId });
+      startTransition(() => {
+        if (result.ok) {
+          if (!result.data.threadRootId) dispatch({ type: "upsert", message: result.data });
+        } else if (result.error.code === "NOT_FOUND") dispatch({ type: "hide", messageId });
+      });
+    });
+  }
+
+  function refreshLatest() {
+    startTransition(async () => {
+      const result = await loadLatestMessages({ conversationId: conversation.id });
+      if (result.ok) startTransition(() => dispatch({ type: "latest", page: result.data }));
+    });
+  }
+
+  useRealtime((event) => {
+    if (event.type === "resync") {
+      refreshLatest();
+      return;
+    }
+    if (!("conversationId" in event.data) || event.data.conversationId !== conversation.id) return;
+    switch (event.type) {
+      case "message.created":
+        if (!event.data.threadRootId) refreshMessage(event.data.messageId);
+        break;
+      case "message.updated":
+      case "message.deleted":
+      case "reaction.changed":
+      case "poll.updated":
+        refreshMessage(event.data.messageId);
+        break;
+    }
+  });
 
   function deliver(draft: ThreadMessage, replyToId: string | undefined, options: SendOptions) {
     startTransition(async () => {

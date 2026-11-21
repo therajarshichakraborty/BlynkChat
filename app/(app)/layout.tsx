@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Rail } from "@/components/shell/rail";
+import { RealtimeBridge } from "@/components/shell/realtime-bridge";
 import { TabBar } from "@/components/shell/tab-bar";
 import { TimeZoneProvider } from "@/components/shell/time-zone";
 import { ToastProvider } from "@/components/ui/toast";
@@ -28,6 +29,7 @@ export default async function AppLayout({ children, modal }: AppLayoutProps) {
           </div>
           {modal}
         </div>
+        <RealtimeBridge />
       </ToastProvider>
     </TimeZoneProvider>
   );

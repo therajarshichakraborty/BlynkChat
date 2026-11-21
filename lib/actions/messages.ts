@@ -10,6 +10,7 @@ import {
   sendMessage as sendMessageService,
 } from "@/lib/server/services/messages";
 import {
+  conversationIdSchema,
   deleteMessageSchema,
   editMessageSchema,
   loadOlderSchema,
@@ -20,6 +21,10 @@ import {
 
 export async function loadOlderMessages(input: { conversationId: string; cursor: string }) {
   return runAction(loadOlderSchema, input, (userId, data) => listMessages(userId, data.conversationId, data.cursor));
+}
+
+export async function loadLatestMessages(input: { conversationId: string }) {
+  return runAction(conversationIdSchema, input, (userId, data) => listMessages(userId, data.conversationId));
 }
 
 export async function fetchMessage(input: { messageId: string }) {
