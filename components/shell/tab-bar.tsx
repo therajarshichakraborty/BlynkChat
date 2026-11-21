@@ -7,14 +7,10 @@ import { NavLink } from "./nav-link";
 import { SoonTab } from "./soon-tab";
 import { TabBarFrame } from "./tab-bar-frame";
 
-type TabBarProps = {
-  unread: number;
-};
-
-export function TabBar({ unread }: TabBarProps) {
+export function TabBar() {
   return (
     <TabBarFrame>
-      <NavLink href="/chats" match="/chats" label="Chats" variant="tab" badge={unread}>
+      <NavLink href="/chats" match="/chats" label="Chats" variant="tab" liveUnread>
         <MessageCircleIcon size={22} />
       </NavLink>
       <SoonTab label="Updates">

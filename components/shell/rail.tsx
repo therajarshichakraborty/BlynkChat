@@ -15,10 +15,9 @@ import { NavLink } from "./nav-link";
 
 type RailProps = {
   me: PersonView;
-  unread: number;
 };
 
-export function Rail({ me: user, unread }: RailProps) {
+export function Rail({ me: user }: RailProps) {
 
   return (
     <nav
@@ -28,7 +27,7 @@ export function Rail({ me: user, unread }: RailProps) {
       <Link href="/" aria-label="Relay home" className="mb-4 rounded-lg">
         <LogoMark />
       </Link>
-      <NavLink href="/chats" match="/chats" label="Chats" variant="rail" badge={unread}>
+      <NavLink href="/chats" match="/chats" label="Chats" variant="rail" liveUnread>
         <MessageCircleIcon size={22} />
       </NavLink>
       <NavLink

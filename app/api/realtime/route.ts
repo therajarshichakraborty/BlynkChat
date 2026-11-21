@@ -1,5 +1,6 @@
 import { hub } from "@/lib/server/realtime/hub";
 import { markDisconnected, markOnline } from "@/lib/server/services/presence";
+import { markAllDelivered, noteDelivered } from "@/lib/server/services/receipts";
 import { getSessionUser } from "@/lib/server/session";
 import type { RealtimeEvent } from "@/types/realtime";
 
@@ -52,7 +53,16 @@ export async function GET(request: Request) {
       write("retry: 3000\n\n");
       await hub.ensureListening();
       if (closed) return;
-      unsubscribe = hub.subscribe({ userId: user.id, send: (event) => write(serialize(event)) });
+      unsubscribe = hub.subscribe({
+        userId: user.id,
+        send: (event) => {
+          write(serialize(event));
+          if (event.type === "message.created" && event.data.senderId !== user.id && !event.data.threadRootId) {
+            noteDelivered(user.id, event.data.conversationId);
+          }
+        },
+      });
+      void markAllDelivered(user.id).catch((error: unknown) => console.error("[relay:receipts]", error));
       void markOnline(user.id, hub.connectionsFor(user.id) === 1).catch((error: unknown) =>
         console.error("[relay:presence]", error),
       );

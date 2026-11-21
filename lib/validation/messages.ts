@@ -12,6 +12,8 @@ export const loadOlderSchema = z.object({
 
 export const conversationIdSchema = z.object({ conversationId: idSchema });
 
+export const markReadSchema = z.object({ conversationId: idSchema, messageId: idSchema });
+
 export const messageIdSchema = z.object({ messageId: idSchema });
 
 export const sendMessageSchema = z.object({

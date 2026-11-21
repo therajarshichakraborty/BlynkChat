@@ -139,6 +139,18 @@ export function ConversationProvider({ conversation, me, initialPage, children }
     }
     if (!("conversationId" in event.data) || event.data.conversationId !== conversation.id) return;
     switch (event.type) {
+      case "receipt.updated":
+        if (event.data.userId !== me.id) {
+          dispatch({
+            type: "receipt",
+            receipt: {
+              userId: event.data.userId,
+              lastReadAt: conversation.receiptsEnabled ? event.data.lastReadAt : null,
+              lastDeliveredAt: event.data.lastDeliveredAt,
+            },
+          });
+        }
+        break;
       case "typing":
         if (event.data.userId !== me.id) addTypist(event.data);
         break;

@@ -3,6 +3,7 @@ import { Rail } from "@/components/shell/rail";
 import { RealtimeBridge } from "@/components/shell/realtime-bridge";
 import { TabBar } from "@/components/shell/tab-bar";
 import { TimeZoneProvider } from "@/components/shell/time-zone";
+import { UnreadProvider } from "@/components/shell/unread-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { getUnreadTotal } from "@/lib/data/chats";
 import { getProfile } from "@/lib/data/users";
@@ -21,15 +22,17 @@ export default async function AppLayout({ children, modal }: AppLayoutProps) {
   return (
     <TimeZoneProvider timeZone={timeZone}>
       <ToastProvider>
-        <div className="flex h-dvh overflow-hidden bg-bg">
-          <Rail me={me} unread={unread} />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <div className="flex min-h-0 flex-1">{children}</div>
-            <TabBar unread={unread} />
+        <UnreadProvider initial={unread} meId={me.id}>
+          <div className="flex h-dvh overflow-hidden bg-bg">
+            <Rail me={me} />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex min-h-0 flex-1">{children}</div>
+              <TabBar />
+            </div>
+            {modal}
           </div>
-          {modal}
-        </div>
-        <RealtimeBridge />
+          <RealtimeBridge />
+        </UnreadProvider>
       </ToastProvider>
     </TimeZoneProvider>
   );

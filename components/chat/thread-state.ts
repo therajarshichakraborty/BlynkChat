@@ -17,6 +17,12 @@ export type ThreadAction =
   | { type: "hide"; messageId: string }
   | { type: "receipt"; receipt: ReceiptView };
 
+function latest(a: string | null, b: string | null) {
+  if (!a) return b;
+  if (!b) return a;
+  return a > b ? a : b;
+}
+
 function byTime(a: ThreadMessage, b: ThreadMessage) {
   return a.createdAt === b.createdAt ? a.id.localeCompare(b.id) : a.createdAt < b.createdAt ? -1 : 1;
 }
@@ -48,10 +54,18 @@ export function threadReducer(state: ThreadState, action: ThreadAction): ThreadS
       return { ...state, messages: state.messages.filter((message) => message.clientId !== action.clientId) };
     case "hide":
       return { ...state, messages: state.messages.filter((message) => message.id !== action.messageId) };
-    case "receipt": {
-      const others = state.receipts.filter((receipt) => receipt.userId !== action.receipt.userId);
-      const known = state.receipts.some((receipt) => receipt.userId === action.receipt.userId);
-      return known ? { ...state, receipts: [...others, action.receipt] } : state;
-    }
+    case "receipt":
+      return {
+        ...state,
+        receipts: state.receipts.map((receipt) =>
+          receipt.userId === action.receipt.userId
+            ? {
+                userId: receipt.userId,
+                lastReadAt: latest(receipt.lastReadAt, action.receipt.lastReadAt),
+                lastDeliveredAt: latest(receipt.lastDeliveredAt, action.receipt.lastDeliveredAt),
+              }
+            : receipt,
+        ),
+      };
   }
 }

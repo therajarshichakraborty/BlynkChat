@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { markRead } from "@/lib/actions/receipts";
 import { useTimeZone } from "@/components/shell/time-zone";
 import { Spinner } from "@/components/ui/spinner";
 import { deliveryStatus } from "@/lib/utils/messages";
@@ -72,6 +73,33 @@ export function Conversation() {
     observer.observe(target);
     return () => observer.disconnect();
   }, [loadOlder, loadingOlder, state.nextCursor]);
+
+  const lastReadable = [...messages].reverse().find((message) => !message.pending);
+  const lastReadableId = lastReadable?.id;
+  const lastMarked = useRef<string | null>(null);
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container || !lastReadableId) return;
+    function attempt() {
+      if (!container || !lastReadableId || lastMarked.current === lastReadableId) return;
+      if (document.visibilityState !== "visible" || !document.hasFocus()) return;
+      const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 160;
+      if (!nearBottom) return;
+      lastMarked.current = lastReadableId;
+      void markRead({ conversationId: conversation.id, messageId: lastReadableId });
+    }
+    const timer = setTimeout(attempt, 400);
+    container.addEventListener("scroll", attempt, { passive: true });
+    window.addEventListener("focus", attempt);
+    document.addEventListener("visibilitychange", attempt);
+    return () => {
+      clearTimeout(timer);
+      container.removeEventListener("scroll", attempt);
+      window.removeEventListener("focus", attempt);
+      document.removeEventListener("visibilitychange", attempt);
+    };
+  }, [conversation.id, lastReadableId]);
 
   useEffect(() => {
     if (!highlighted) return;
