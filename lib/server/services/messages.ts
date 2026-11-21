@@ -3,6 +3,7 @@ import type { MessageKind } from "@/prisma/generated/client";
 import type { MessagePage, MessageView } from "@/types/message";
 import { db } from "../db";
 import { forbidden, invalid, notFound } from "../errors";
+import { assertWithinLimit } from "../rate-limit";
 import { messageInclude, toMessageView } from "../views/messages";
 import { blockStatus } from "./blocks";
 import { activeMemberIds, isAdminRole, requireMembership, visibleMessagesWhere } from "./conversations";
@@ -110,6 +111,7 @@ export async function sendMessage(userId: string, input: SendMessageInput): Prom
     include: messageInclude(userId),
   });
   if (existing) return { message: toMessageView(existing, userId), recipients };
+  assertWithinLimit("send", userId);
 
   if (input.replyToId) {
     const reply = await db.message.findUnique({ where: { id: input.replyToId }, select: { conversationId: true } });

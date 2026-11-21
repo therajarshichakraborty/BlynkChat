@@ -4,8 +4,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTimeZone } from "@/components/shell/time-zone";
 import { Spinner } from "@/components/ui/spinner";
 import { deliveryStatus } from "@/lib/utils/messages";
-import { Composer } from "./composer";
+import { ConversationComposer } from "./conversation-composer";
 import { useConversation } from "./conversation-provider";
+import { MessageActions } from "./message-actions";
 import { MessageBubble } from "./message-bubble";
 import { MessageList } from "./message-list";
 import { SystemMessage } from "./system-message";
@@ -20,16 +21,16 @@ function firstUnread(messages: ThreadMessage[], lastReadAt: string | null, meId:
 }
 
 export function Conversation() {
-  const { conversation, me, state, loadOlder, loadingOlder } = useConversation();
+  const { conversation, me, state, messages, loadOlder, loadingOlder } = useConversation();
   const timeZone = useTimeZone();
   const scrollRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
   const unreadRef = useRef<HTMLLIElement>(null);
   const heightBeforeLoad = useRef<number | null>(null);
-  const [unread] = useState(() => firstUnread(state.messages, conversation.lastReadAt, me.id));
+  const [unread] = useState(() => firstUnread(messages, conversation.lastReadAt, me.id));
   const [highlighted, setHighlighted] = useState<string | null>(null);
-  const firstId = state.messages[0]?.id;
-  const last = state.messages.at(-1);
+  const firstId = messages[0]?.id;
+  const last = messages.at(-1);
   const lastKey = last ? (last.clientId ?? last.id) : undefined;
   const group = conversation.kind !== "direct";
 
@@ -96,6 +97,7 @@ export function Conversation() {
         highlighted={highlighted === message.id}
         status={outgoing ? (message.pending ?? deliveryStatus(message, state.receipts)) : undefined}
         onReplyClick={jumpTo}
+        actions={<MessageActions message={message} outgoing={outgoing} />}
       />
     );
   }
@@ -110,11 +112,11 @@ export function Conversation() {
             <span className="sr-only">Loading older messages</span>
           </p>
         ) : null}
-        {state.messages.length === 0 ? (
+        {messages.length === 0 ? (
           <p className="px-6 py-16 text-center text-sm text-muted">No messages yet. Say hello.</p>
         ) : (
           <MessageList
-            messages={state.messages}
+            messages={messages}
             unreadFromId={unread.id}
             unreadCount={unread.count}
             unreadRef={unreadRef}
@@ -123,7 +125,7 @@ export function Conversation() {
         )}
       </div>
       <div className="px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))] md:px-6 md:pb-5">
-        <Composer placeholder={`Message ${conversation.title}…`} onSend={() => undefined} />
+        <ConversationComposer />
       </div>
     </>
   );
