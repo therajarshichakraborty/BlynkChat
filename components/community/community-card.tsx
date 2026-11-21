@@ -29,7 +29,7 @@ export function CommunityCard({ community }: CommunityCardProps) {
             {community.name}
           </Link>
           {community.verified ? (
-            <BadgeCheckIcon size={18} className="shrink-0 text-accent-text" aria-label="Verified" />
+            <BadgeCheckIcon size={18} className="shrink-0 text-accent-text" aria-hidden={false} role="img" aria-label="Verified" />
           ) : null}
         </h3>
         <p className="mt-1.5 line-clamp-2 text-base text-muted">{community.description}</p>

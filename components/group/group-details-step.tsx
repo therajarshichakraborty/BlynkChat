@@ -25,7 +25,7 @@ type GroupDetailsStepProps = {
   onSetting: (key: keyof GroupSettings, value: boolean) => void;
 };
 
-export const groupNameLimit = 48;
+const groupNameLimit = 48;
 
 const settingRows: { key: keyof GroupSettings; label: string; icon: ReactNode }[] = [
   { key: "approval", label: "Admin approval to join", icon: <ShieldCheckIcon size={18} /> },
@@ -33,7 +33,7 @@ const settingRows: { key: keyof GroupSettings; label: string; icon: ReactNode }[
   { key: "adminsOnly", label: "Only admins can post", icon: <MegaphoneIcon size={18} /> },
 ];
 
-export function initialsFor(name: string) {
+function initialsFor(name: string) {
   const letters = name
     .trim()
     .split(/\s+/)

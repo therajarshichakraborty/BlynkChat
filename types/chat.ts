@@ -1,13 +1,13 @@
 import type { Tone } from "./tone";
 import type { User } from "./user";
 
-export type ChatKind = "direct" | "group" | "room";
+type ChatKind = "direct" | "group" | "room";
 
 export type ChatFilter = "all" | "unread" | "groups" | "rooms" | "starred";
 
 export type DeliveryStatus = "sending" | "sent" | "read";
 
-export type ChatPreview = {
+type ChatPreview = {
   kind: "text" | "voice" | "photo";
   text: string;
   author?: string;

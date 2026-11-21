@@ -1,7 +1,7 @@
 import type { Route } from "next";
 import type { CommunityCategory } from "@/types/community";
 
-export type CategoryFilter = CommunityCategory | "for-you";
+type CategoryFilter = CommunityCategory | "for-you";
 
 export const communityCategories: { value: CategoryFilter; label: string }[] = [
   { value: "for-you", label: "For you" },

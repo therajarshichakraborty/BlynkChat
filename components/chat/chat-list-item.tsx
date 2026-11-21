@@ -33,7 +33,7 @@ export function ChatListItem({ chat, active, search }: ChatListItemProps) {
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex items-center gap-2">
             <span className="truncate text-md font-medium">{chat.title}</span>
-            {chat.muted ? <BellOffIcon size={14} className="shrink-0 text-faint" aria-label="Muted" /> : null}
+            {chat.muted ? <BellOffIcon size={14} className="shrink-0 text-muted" aria-hidden={false} role="img" aria-label="Muted" /> : null}
             <span
               className={cn(
                 "ml-auto shrink-0 text-xs tabular-nums",
@@ -49,7 +49,7 @@ export function ChatListItem({ chat, active, search }: ChatListItemProps) {
               {highlighted ? (
                 <Badge count={chat.unread} label="unread messages" />
               ) : chat.pinned ? (
-                <PinIcon size={14} className="text-faint" aria-label="Pinned" />
+                <PinIcon size={14} className="text-muted" aria-hidden={false} role="img" aria-label="Pinned" />
               ) : null}
             </span>
           </span>

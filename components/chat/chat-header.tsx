@@ -44,7 +44,7 @@ export function ChatHeader({ chat, subtitle, children }: ChatHeaderProps) {
       <Link
         href="/video"
         title="Video calls are coming soon"
-        className="inline-flex h-10 items-center gap-2 rounded-full border border-line pr-1.5 pl-3 text-faint transition-colors duration-150 hover:bg-surface"
+        className="inline-flex h-10 items-center gap-2 rounded-full border border-line pr-1.5 pl-3 text-muted transition-colors duration-150 hover:bg-surface"
       >
         <VideoIcon size={19} />
         <span className="sr-only">Video calls, coming soon</span>

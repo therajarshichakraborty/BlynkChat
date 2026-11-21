@@ -46,7 +46,7 @@ export function Rail() {
         role="img"
         aria-label="Calls, coming soon"
         title="Calls coming soon"
-        className="inline-grid size-11 place-items-center rounded-lg text-faint"
+        className="inline-grid size-11 place-items-center rounded-lg text-muted"
       >
         <PhoneIcon size={22} />
       </span>

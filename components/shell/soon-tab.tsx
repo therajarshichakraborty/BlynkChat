@@ -10,7 +10,7 @@ export function SoonTab({ label, children }: SoonTabProps) {
     <span
       aria-disabled="true"
       title={`${label} coming soon`}
-      className="flex min-h-12 flex-1 flex-col items-center justify-center gap-1 text-2xs font-medium text-faint"
+      className="flex min-h-12 flex-1 flex-col items-center justify-center gap-1 text-2xs font-medium text-muted"
     >
       {children}
       {label}

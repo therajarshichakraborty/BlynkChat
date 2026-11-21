@@ -21,9 +21,9 @@ export function ChatPreviewLine({ chat }: ChatPreviewLineProps) {
     <span className="flex min-w-0 items-center gap-1.5 text-muted">
       {preview.fromMe ? (
         preview.status === "read" ? (
-          <CheckCheckIcon size={16} className="shrink-0 text-accent-text" aria-label="Read" />
+          <CheckCheckIcon size={16} className="shrink-0 text-accent-text" aria-hidden={false} role="img" aria-label="Read" />
         ) : (
-          <CheckIcon size={16} className="shrink-0" aria-label="Sent" />
+          <CheckIcon size={16} className="shrink-0" aria-hidden={false} role="img" aria-label="Sent" />
         )
       ) : null}
       {preview.kind === "voice" ? <MicIcon size={15} className="shrink-0 text-accent-text" /> : null}

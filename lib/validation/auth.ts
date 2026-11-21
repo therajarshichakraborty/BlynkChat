@@ -11,13 +11,13 @@ export function isEmail(value: string) {
   return emailPattern.test(value.trim());
 }
 
-export function validateEmail(value: string) {
+function validateEmail(value: string) {
   if (!value.trim()) return "Enter your email address.";
   if (!isEmail(value)) return "Enter a valid email address.";
   return undefined;
 }
 
-export function validatePassword(value: string) {
+function validatePassword(value: string) {
   if (value.length < 8) return "Use at least 8 characters.";
   if (!/[a-z]/i.test(value) || !/\d/.test(value)) return "Include at least one letter and one number.";
   return undefined;

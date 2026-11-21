@@ -13,10 +13,10 @@ export function SiteHeader() {
         <Logo />
         <NavLinks />
         <div className="ml-auto flex items-center gap-2 md:gap-3">
-          <form action="/" role="search" className="max-lg:hidden">
+          <form action="/communities" role="search" className="max-lg:hidden">
             <label className="flex h-9 w-56 items-center gap-2 rounded-full border border-line bg-surface/80 px-3 text-muted transition-[border-color,box-shadow] duration-150 focus-within:border-accent focus-within:ring-4 focus-within:ring-ring">
               <SearchIcon size={16} />
-              <span className="sr-only">Search Relay</span>
+              <span className="sr-only">Search communities</span>
               <input
                 type="search"
                 name="q"

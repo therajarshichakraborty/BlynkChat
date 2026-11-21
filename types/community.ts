@@ -52,12 +52,12 @@ export type CommunityMember = {
   role: MemberRole;
 };
 
-export type MessageSegment = {
+type MessageSegment = {
   type: "text" | "code";
   value: string;
 };
 
-export type PollOption = {
+type PollOption = {
   label: string;
   percent: number;
   voted: boolean;

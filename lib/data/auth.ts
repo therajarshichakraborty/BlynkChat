@@ -1,6 +1,6 @@
 import type { LoginValues, SignupValues } from "@/lib/validation/auth";
 
-export type AuthResult = { ok: true } | { ok: false; error: string };
+type AuthResult = { ok: true } | { ok: false; error: string };
 
 const takenUsernames = new Set(["arjun", "ananya", "relay"]);
 

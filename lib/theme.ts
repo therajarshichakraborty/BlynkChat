@@ -1,6 +1,6 @@
 export type ThemePreference = "light" | "dark" | "system";
 
-export const themeStorageKey = "relay-theme";
+const themeStorageKey = "relay-theme";
 
 export const themeScript = `(function(){var k="${themeStorageKey}";var d=document.documentElement;try{var m=window.matchMedia("(prefers-color-scheme: dark)");var r=function(){var s=localStorage.getItem(k);d.dataset.theme=s==="light"||s==="dark"?s:m.matches?"dark":"light";};r();m.addEventListener("change",r);}catch(e){d.dataset.theme="light";}})();`;
 

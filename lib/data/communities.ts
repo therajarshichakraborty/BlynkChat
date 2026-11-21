@@ -1,10 +1,6 @@
 import { communities } from "@/lib/mock/communities";
 import type { Community, CommunityCategory } from "@/types/community";
 
-export function getCommunities(): Community[] {
-  return communities;
-}
-
 export function getJoinedCommunities(): Community[] {
   return communities.filter((community) => community.joined);
 }

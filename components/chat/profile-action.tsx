@@ -22,7 +22,7 @@ export function ProfileAction({ icon, label, soon = false }: ProfileActionProps)
         aria-label={soon ? `${label}, coming soon` : label}
         className={cn(
           "flex h-17 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-line bg-card text-sm font-medium shadow-xs transition-colors duration-150",
-          soon ? "text-faint disabled:opacity-100" : "hover:bg-surface",
+          soon ? "text-muted disabled:opacity-100" : "hover:bg-surface",
         )}
       >
         {icon}
