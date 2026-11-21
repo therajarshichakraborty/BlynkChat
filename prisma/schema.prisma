@@ -36,23 +36,29 @@ enum ThemePreference {
 }
 
 model User {
-  id              String        @id @default(cuid())
+  id              String               @id @default(cuid())
   name            String
-  email           String        @unique
-  emailVerified   Boolean       @default(false)
+  email           String               @unique
+  emailVerified   Boolean              @default(false)
   image           String?
-  username        String        @unique
+  username        String               @unique
   displayUsername String?
-  bio             String        @default("")
-  title           String        @default("")
-  location        String        @default("")
-  tone            Tone          @default(BLUE)
+  bio             String               @default("")
+  title           String               @default("")
+  location        String               @default("")
+  tone            Tone                 @default(BLUE)
   lastSeenAt      DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
   sessions        Session[]
   accounts        Account[]
   settings        UserSettings?
+  memberships     ConversationMember[]
+  messages        Message[]
+  hiddenMessages  MessageHidden[]
+  createdChats    Conversation[]       @relation("ConversationCreator")
+  joinRequests    JoinRequest[]        @relation("JoinRequester")
+  decidedRequests JoinRequest[]        @relation("JoinRequestDecider")
 
   @@map("user")
 }
@@ -122,4 +128,158 @@ model UserSettings {
   updatedAt           DateTime        @updatedAt
 
   @@map("user_settings")
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+  ROOM
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum RoomIcon {
+  HASH
+  MEGAPHONE
+  BRIEFCASE
+  BOOK
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MessageKind {
+  TEXT
+  IMAGE
+  FILE
+  VOICE
+  POLL
+  SYSTEM
+}
+
+model Conversation {
+  id                  String               @id @default(cuid())
+  type                ConversationType
+  title               String?
+  description         String               @default("")
+  image               String?
+  tone                Tone                 @default(BLUE)
+  communityId         String?
+  slug                String?
+  roomIcon            RoomIcon?
+  directKey           String?              @unique
+  onlyAdminsCanPost   Boolean              @default(false)
+  requireApproval     Boolean              @default(false)
+  disappearingSeconds Int?
+  inviteCode          String               @unique @default(cuid())
+  lastMessageAt       DateTime             @default(now())
+  createdById         String?
+  createdBy           User?                @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  members             ConversationMember[]
+  messages            Message[]
+  joinRequests        JoinRequest[]
+
+  @@unique([communityId, slug])
+  @@index([lastMessageAt])
+  @@index([communityId])
+  @@index([createdById])
+  @@map("conversation")
+}
+
+model ConversationMember {
+  id                String       @id @default(cuid())
+  conversationId    String
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role              MemberRole   @default(MEMBER)
+  joinedAt          DateTime     @default(now())
+  leftAt            DateTime?
+  lastReadMessageId String?
+  lastReadAt        DateTime?
+  lastDeliveredAt   DateTime?
+  mutedUntil        DateTime?
+  archivedAt        DateTime?
+  pinnedAt          DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([lastReadMessageId])
+  @@map("conversation_member")
+}
+
+model JoinRequest {
+  id             String            @id @default(cuid())
+  conversationId String
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User              @relation("JoinRequester", fields: [userId], references: [id], onDelete: Cascade)
+  status         JoinRequestStatus @default(PENDING)
+  decidedById    String?
+  decidedBy      User?             @relation("JoinRequestDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([decidedById])
+  @@map("join_request")
+}
+
+model Message {
+  id             String          @id @default(cuid())
+  conversationId String
+  conversation   Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String?
+  sender         User?           @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  kind           MessageKind     @default(TEXT)
+  body           String          @default("")
+  systemData     Json?
+  replyToId      String?
+  replyTo        Message?        @relation("MessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        Message[]       @relation("MessageReply")
+  threadRootId   String?
+  threadRoot     Message?        @relation("MessageThread", fields: [threadRootId], references: [id], onDelete: Cascade)
+  threadReplies  Message[]       @relation("MessageThread")
+  forwarded      Boolean         @default(false)
+  editedAt       DateTime?
+  deletedAt      DateTime?
+  expiresAt      DateTime?
+  clientId       String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  hiddenFor      MessageHidden[]
+
+  @@unique([senderId, clientId])
+  @@index([conversationId, createdAt(sort: Desc), id])
+  @@index([senderId])
+  @@index([replyToId])
+  @@index([threadRootId])
+  @@index([expiresAt])
+  @@map("message")
+}
+
+model MessageHidden {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("message_hidden")
 }
