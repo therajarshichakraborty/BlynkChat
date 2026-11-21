@@ -36,34 +36,40 @@ enum ThemePreference {
 }
 
 model User {
-  id              String               @id @default(cuid())
-  name            String
-  email           String               @unique
-  emailVerified   Boolean              @default(false)
-  image           String?
-  username        String               @unique
-  displayUsername String?
-  bio             String               @default("")
-  title           String               @default("")
-  location        String               @default("")
-  tone            Tone                 @default(BLUE)
-  lastSeenAt      DateTime?
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
-  sessions        Session[]
-  accounts        Account[]
-  settings        UserSettings?
-  memberships     ConversationMember[]
-  messages        Message[]
-  hiddenMessages  MessageHidden[]
-  createdChats    Conversation[]       @relation("ConversationCreator")
-  joinRequests    JoinRequest[]        @relation("JoinRequester")
-  decidedRequests JoinRequest[]        @relation("JoinRequestDecider")
-  attachments     Attachment[]
-  reactions       Reaction[]
-  starredMessages StarredMessage[]
-  pinnedMessages  PinnedMessage[]
-  pollVotes       PollVote[]
+  id                 String               @id @default(cuid())
+  name               String
+  email              String               @unique
+  emailVerified      Boolean              @default(false)
+  image              String?
+  username           String               @unique
+  displayUsername    String?
+  bio                String               @default("")
+  title              String               @default("")
+  location           String               @default("")
+  tone               Tone                 @default(BLUE)
+  lastSeenAt         DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  sessions           Session[]
+  accounts           Account[]
+  settings           UserSettings?
+  memberships        ConversationMember[]
+  messages           Message[]
+  hiddenMessages     MessageHidden[]
+  createdChats       Conversation[]       @relation("ConversationCreator")
+  joinRequests       JoinRequest[]        @relation("JoinRequester")
+  decidedRequests    JoinRequest[]        @relation("JoinRequestDecider")
+  attachments        Attachment[]
+  reactions          Reaction[]
+  starredMessages    StarredMessage[]
+  pinnedMessages     PinnedMessage[]
+  pollVotes          PollVote[]
+  createdCommunities Community[]          @relation("CommunityCreator")
+  communities        CommunityMember[]
+  blocksMade         Block[]              @relation("BlocksMade")
+  blocksReceived     Block[]              @relation("BlocksReceived")
+  stories            Story[]
+  storyViews         StoryView[]
 
   @@map("user")
 }
@@ -177,6 +183,7 @@ model Conversation {
   image               String?
   tone                Tone                 @default(BLUE)
   communityId         String?
+  community           Community?           @relation(fields: [communityId], references: [id], onDelete: Cascade)
   slug                String?
   roomIcon            RoomIcon?
   directKey           String?              @unique
@@ -316,6 +323,7 @@ model Attachment {
   height     Int?
   durationMs Int?
   waveform   Json?
+  story      Story?
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
 
@@ -414,4 +422,111 @@ model PollVote {
   @@index([pollId])
   @@index([userId])
   @@map("poll_vote")
+}
+
+enum CommunityCategory {
+  TECHNOLOGY
+  DESIGN
+  ML
+  STARTUPS
+  CAMPUS
+  HOBBIES
+  LOCAL
+}
+
+enum CommunityVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum StoryKind {
+  TEXT
+  IMAGE
+}
+
+model Community {
+  id          String              @id @default(cuid())
+  slug        String              @unique
+  name        String
+  description String              @default("")
+  image       String?
+  cover       Tone                @default(BLUE)
+  tone        Tone                @default(BLUE)
+  category    CommunityCategory
+  visibility  CommunityVisibility @default(PUBLIC)
+  verified    Boolean             @default(false)
+  createdById String?
+  createdBy   User?               @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  members     CommunityMember[]
+  rooms       Conversation[]
+
+  @@index([category])
+  @@index([createdById])
+  @@map("community")
+}
+
+model CommunityMember {
+  id          String     @id @default(cuid())
+  communityId String
+  community   Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        MemberRole @default(MEMBER)
+  joinedAt    DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([communityId, userId])
+  @@index([userId])
+  @@map("community_member")
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User     @relation("BlocksMade", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("block")
+}
+
+model Story {
+  id           String      @id @default(cuid())
+  authorId     String
+  author       User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  kind         StoryKind
+  body         String      @default("")
+  background   Tone        @default(BLUE)
+  attachmentId String?     @unique
+  attachment   Attachment? @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
+  expiresAt    DateTime
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  views        StoryView[]
+
+  @@index([authorId, createdAt])
+  @@index([expiresAt])
+  @@map("story")
+}
+
+model StoryView {
+  id        String   @id @default(cuid())
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  viewerId  String
+  viewer    User     @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+  viewedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([storyId, viewerId])
+  @@index([viewerId])
+  @@map("story_view")
 }
