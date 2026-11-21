@@ -4,15 +4,23 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import { PasswordField } from "@/components/ui/password-field";
 import { TextField } from "@/components/ui/text-field";
-import { signIn } from "@/lib/data/auth";
+import { authClient } from "@/lib/auth-client";
+import { signInErrorMessage } from "@/lib/auth-errors";
 import { afterAuthRoute } from "@/lib/site";
-import { hasErrors, validateLogin, type FieldErrors, type LoginValues } from "@/lib/validation/auth";
+import { loginSchema, type LoginValues } from "@/lib/validation/auth";
+import { collectFieldErrors, type FieldErrors } from "@/lib/validation/form";
 import { FormAlert } from "./form-alert";
 import { SubmitButton } from "./submit-button";
 
+function signInWith({ identifier, password }: LoginValues) {
+  return identifier.includes("@")
+    ? authClient.signIn.email({ email: identifier, password })
+    : authClient.signIn.username({ username: identifier.toLowerCase(), password });
+}
+
 export function LoginForm() {
   const router = useRouter();
-  const [values, setValues] = useState<LoginValues>({ email: "", password: "" });
+  const [values, setValues] = useState<LoginValues>({ identifier: "", password: "" });
   const [errors, setErrors] = useState<FieldErrors<LoginValues>>({});
   const [formError, setFormError] = useState("");
   const [pending, startTransition] = useTransition();
@@ -24,17 +32,21 @@ export function LoginForm() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const nextErrors = validateLogin(values);
-    setErrors(nextErrors);
     setFormError("");
-    if (hasErrors(nextErrors)) return;
+    const parsed = loginSchema.safeParse(values);
+    if (!parsed.success) {
+      setErrors(collectFieldErrors(parsed.error));
+      return;
+    }
+    setErrors({});
     startTransition(async () => {
-      const result = await signIn(values);
-      if (result.ok) {
-        router.push(afterAuthRoute);
-      } else {
-        setFormError(result.error);
+      const { error } = await signInWith(parsed.data);
+      if (error) {
+        setFormError(signInErrorMessage(error));
+        return;
       }
+      router.replace(afterAuthRoute);
+      router.refresh();
     });
   }
 
@@ -42,15 +54,16 @@ export function LoginForm() {
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
       {formError ? <FormAlert message={formError} /> : null}
       <TextField
-        id="login-email"
-        name="email"
-        type="email"
-        label="Email"
-        autoComplete="email"
-        placeholder="you@email.com"
-        value={values.email}
-        onChange={(event) => update("email", event.target.value)}
-        error={errors.email}
+        id="login-identifier"
+        name="identifier"
+        label="Email or username"
+        autoComplete="username"
+        autoCapitalize="none"
+        spellCheck={false}
+        placeholder="you@email.com or your_name"
+        value={values.identifier}
+        onChange={(event) => update("identifier", event.target.value)}
+        error={errors.identifier}
         disabled={pending}
       />
       <PasswordField
