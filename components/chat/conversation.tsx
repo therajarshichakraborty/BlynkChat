@@ -10,6 +10,7 @@ import { MessageActions } from "./message-actions";
 import { MessageBubble } from "./message-bubble";
 import { MessageList } from "./message-list";
 import { SystemMessage } from "./system-message";
+import { TypingIndicator } from "./typing-indicator";
 import type { ThreadMessage } from "./thread-state";
 
 function firstUnread(messages: ThreadMessage[], lastReadAt: string | null, meId: string) {
@@ -21,7 +22,7 @@ function firstUnread(messages: ThreadMessage[], lastReadAt: string | null, meId:
 }
 
 export function Conversation() {
-  const { conversation, me, state, messages, loadOlder, loadingOlder } = useConversation();
+  const { conversation, me, state, messages, loadOlder, loadingOlder, typists } = useConversation();
   const timeZone = useTimeZone();
   const scrollRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -53,7 +54,7 @@ export function Conversation() {
     if (!container || !lastKey) return;
     const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 240;
     if (nearBottom || last?.sender?.id === me.id) container.scrollTop = container.scrollHeight;
-  }, [lastKey, last?.sender?.id, me.id]);
+  }, [lastKey, last?.sender?.id, me.id, typists.length]);
 
   useEffect(() => {
     const target = topRef.current;
@@ -121,7 +122,11 @@ export function Conversation() {
             unreadCount={unread.count}
             unreadRef={unreadRef}
             renderMessage={renderMessage}
-          />
+          >
+            {typists[0] ? (
+              <TypingIndicator name={typists[0].name} initials={typists[0].initials} tone={typists[0].tone} />
+            ) : null}
+          </MessageList>
         )}
       </div>
       <div className="px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))] md:px-6 md:pb-5">

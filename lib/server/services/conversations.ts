@@ -14,7 +14,8 @@ import { db } from "../db";
 import { forbidden, notFound } from "../errors";
 import { toAttachment } from "../views/messages";
 import { personDetailSelect, personSelect, toPerson, toTone } from "../views/people";
-import { blockStatus } from "./blocks";
+import { isOnline } from "../realtime/presence";
+import { blockStatus, blockedUserIds } from "./blocks";
 
 export function isAdminRole(role: MemberRole) {
   return role === "OWNER" || role === "ADMIN";
@@ -113,7 +114,6 @@ export async function totalUnread(userId: string) {
 type ListOptions = {
   filter: ChatFilter;
   query: string;
-  isOnline?: (userId: string) => boolean;
 };
 
 export async function listConversations(userId: string, options: ListOptions): Promise<ChatSummary[]> {
@@ -159,7 +159,7 @@ export async function listConversations(userId: string, options: ListOptions): P
           members: {
             where: { leftAt: null, userId: { not: userId } },
             take: 1,
-            select: { user: { select: personSelect } },
+            select: { user: { select: { ...personSelect, settings: { select: { lastSeenVisibility: true } } } } },
           },
           _count: { select: { members: { where: { leftAt: null } } } },
           messages: {
@@ -174,7 +174,7 @@ export async function listConversations(userId: string, options: ListOptions): P
     orderBy: [{ pinnedAt: { sort: "desc", nulls: "last" } }, { conversation: { lastMessageAt: "desc" } }],
   });
 
-  const counts = await unreadCounts(userId);
+  const [counts, blocked] = await Promise.all([unreadCounts(userId), blockedUserIds(userId)]);
 
   const summaries = memberships.map((membership): ChatSummary => {
     const conversation = membership.conversation;
@@ -202,7 +202,7 @@ export async function listConversations(userId: string, options: ListOptions): P
       unread: counts.get(conversation.id) ?? 0,
       lastActivityAt: conversation.lastMessageAt.toISOString(),
       preview: last ? toPreview(last, userId, kind) : null,
-      online: peer ? (options.isOnline?.(peer.id) ?? false) : false,
+      online: peer && !blocked.has(peer.id) ? isOnline(peer.id, peer.settings?.lastSeenVisibility, true) : false,
     };
   });
 
@@ -254,7 +254,7 @@ export async function getConversationView(userId: string, conversationId: string
     peer: peerMember ? toPerson(peerMember.user) : null,
     presence: peerMember
       ? {
-          online: false,
+          online: !lastSeenHidden && isOnline(peerMember.userId, peerMember.user.settings?.lastSeenVisibility, true),
           lastSeenAt: lastSeenHidden ? null : (peerMember.user.lastSeenAt?.toISOString() ?? null),
         }
       : null,
@@ -317,11 +317,7 @@ export async function getOrCreateDirect(userId: string, otherId: string) {
   return created.id;
 }
 
-export async function getConversationDetails(
-  userId: string,
-  conversationId: string,
-  isOnline: (userId: string) => boolean = () => false,
-): Promise<ConversationDetails> {
+export async function getConversationDetails(userId: string, conversationId: string): Promise<ConversationDetails> {
   const membership = await requireMembership(userId, conversationId);
   const visible = { message: { conversationId, deletedAt: null, hiddenFor: { none: { userId } } } };
   const [media, mediaCount, files, members] = await Promise.all([
@@ -332,7 +328,10 @@ export async function getConversationDetails(
       where: { conversationId, leftAt: null },
       orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
       take: 200,
-      select: { role: true, user: { select: personDetailSelect } },
+      select: {
+        role: true,
+        user: { select: { ...personDetailSelect, settings: { select: { lastSeenVisibility: true } } } },
+      },
     }),
   ]);
 
@@ -369,7 +368,7 @@ export async function getConversationDetails(
     members: members.map((member) => ({
       person: toPerson(member.user),
       role: toRoleView(member.role),
-      online: isOnline(member.user.id),
+      online: member.user.id === userId || isOnline(member.user.id, member.user.settings?.lastSeenVisibility, false),
     })),
   };
 }

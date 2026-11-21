@@ -16,7 +16,8 @@ function lockedReason(blocked: "none" | "by-me" | "by-them", onlyAdmins: boolean
 }
 
 export function ConversationComposer() {
-  const { conversation, me, replyingTo, setReplyingTo, editing, setEditing, send, saveEdit } = useConversation();
+  const { conversation, me, replyingTo, setReplyingTo, editing, setEditing, send, saveEdit, signalTyping } =
+    useConversation();
 
   if (!conversation.canPost) {
     return <ComposerNotice text={lockedReason(conversation.blocked, conversation.onlyAdminsCanPost)} />;
@@ -52,6 +53,7 @@ export function ConversationComposer() {
       initialValue={editing?.body ?? ""}
       banner={banner}
       onCancel={editing ? () => setEditing(null) : replyingTo ? () => setReplyingTo(null) : undefined}
+      onTyping={editing ? undefined : signalTyping}
       onSend={(body) => (editing ? saveEdit(editing.id, body) : send(body))}
     />
   );

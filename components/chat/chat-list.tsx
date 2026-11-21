@@ -7,7 +7,9 @@ import { PinIcon } from "@/components/icons/pin-icon";
 import { SearchIcon } from "@/components/icons/search-icon";
 import { EmptyState } from "@/components/ui/empty-state";
 import { loadChatList } from "@/lib/actions/chats";
+import { useTypingMap } from "@/lib/hooks/use-typing-map";
 import { useRealtime } from "@/lib/realtime-client";
+import { typingLabel } from "@/lib/utils/typing";
 import { chatListQuery } from "@/lib/utils/chat-filters";
 import { cn } from "@/lib/utils/cn";
 import type { ChatFilter, ChatSummary } from "@/types/conversation";
@@ -41,7 +43,12 @@ export function ChatList({ chats: initialChats, filter, query: initialQuery, unr
     setSource(initialChats);
     setLive({ chats: initialChats, unread: initialUnread });
   }
-  const { chats, unread: unreadCount } = live;
+  const { chats: listed, unread: unreadCount } = live;
+  const typing = useTypingMap();
+  const [onlineOverrides, setOnlineOverrides] = useState<Record<string, boolean>>({});
+  const chats = listed.map((chat) =>
+    chat.peerId && chat.peerId in onlineOverrides ? { ...chat, online: onlineOverrides[chat.peerId] ?? chat.online } : chat,
+  );
 
   useEffect(
     () => () => {
@@ -52,6 +59,17 @@ export function ChatList({ chats: initialChats, filter, query: initialQuery, unr
   );
 
   useRealtime((event) => {
+    if (event.type === "typing") {
+      typing.add(event.data.conversationId, event.data);
+      return;
+    }
+    if (event.type === "presence") {
+      setOnlineOverrides((current) => ({ ...current, [event.data.userId]: event.data.online }));
+      return;
+    }
+    if (event.type === "message.created" && event.data.senderId) {
+      typing.remove(event.data.conversationId, event.data.senderId);
+    }
     const relevant =
       refreshEvents.has(event.type) ||
       (event.type === "receipt.updated" && event.data.userId === meId) ||
@@ -62,7 +80,12 @@ export function ChatList({ chats: initialChats, filter, query: initialQuery, unr
     refreshTimer.current = setTimeout(() => {
       startTransition(async () => {
         const result = await loadChatList({ filter, query: initialQuery });
-        if (result.ok) startTransition(() => setLive(result.data));
+        if (result.ok) {
+          startTransition(() => {
+            setLive(result.data);
+            setOnlineOverrides({});
+          });
+        }
       });
     }, 250);
   });
@@ -119,7 +142,13 @@ export function ChatList({ chats: initialChats, filter, query: initialQuery, unr
                 </h2>
                 <ul className="flex flex-col gap-0.5">
                   {pinned.map((chat) => (
-                    <ChatListItem key={chat.id} chat={chat} active={chat.id === activeId} search={search} />
+                    <ChatListItem
+                      key={chat.id}
+                      chat={chat}
+                      active={chat.id === activeId}
+                      search={search}
+                      typingLabel={typingLabel(typing.map[chat.id] ?? [], chat.kind === "direct") || undefined}
+                    />
                   ))}
                 </ul>
               </section>
@@ -137,7 +166,13 @@ export function ChatList({ chats: initialChats, filter, query: initialQuery, unr
               </h2>
               <ul className="flex flex-col gap-0.5">
                 {rest.map((chat) => (
-                  <ChatListItem key={chat.id} chat={chat} active={chat.id === activeId} search={search} />
+                  <ChatListItem
+                      key={chat.id}
+                      chat={chat}
+                      active={chat.id === activeId}
+                      search={search}
+                      typingLabel={typingLabel(typing.map[chat.id] ?? [], chat.kind === "direct") || undefined}
+                    />
                 ))}
               </ul>
             </section>

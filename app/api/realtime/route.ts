@@ -1,4 +1,5 @@
 import { hub } from "@/lib/server/realtime/hub";
+import { markDisconnected, markOnline } from "@/lib/server/services/presence";
 import { getSessionUser } from "@/lib/server/session";
 import type { RealtimeEvent } from "@/types/realtime";
 
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
         closed = true;
         clearInterval(timers.heartbeat);
         unsubscribe();
+        if (hub.connectionsFor(user.id) === 0) markDisconnected(user.id);
         try {
           controller.close();
         } catch {}
@@ -51,6 +53,9 @@ export async function GET(request: Request) {
       await hub.ensureListening();
       if (closed) return;
       unsubscribe = hub.subscribe({ userId: user.id, send: (event) => write(serialize(event)) });
+      void markOnline(user.id, hub.connectionsFor(user.id) === 1).catch((error: unknown) =>
+        console.error("[relay:presence]", error),
+      );
 
       if (lastEventId) {
         const missed = await hub.missedSince(user.id, lastEventId);

@@ -7,6 +7,7 @@ import {
   useCallback,
   useOptimistic,
   useReducer,
+  useRef,
   useState,
   useTransition,
   type ReactNode,
@@ -20,7 +21,9 @@ import {
   loadOlderMessages,
   sendMessage,
 } from "@/lib/actions/messages";
+import { useTypists } from "@/lib/hooks/use-typists";
 import { useRealtime } from "@/lib/realtime-client";
+import { sendTypingSignal, typingLabel as labelFor, typingThrottleMs, type Typist } from "@/lib/utils/typing";
 import type { ConversationView, PresenceView } from "@/types/conversation";
 import type { AttachmentView, MessagePage, MessageView, SenderView } from "@/types/message";
 import { threadReducer, type ThreadAction, type ThreadMessage, type ThreadState } from "./thread-state";
@@ -42,6 +45,8 @@ type ConversationContextValue = {
   presence: PresenceView | null;
   setPresence: (presence: PresenceView | null) => void;
   typingLabel: string;
+  typists: Typist[];
+  signalTyping: () => void;
   replyingTo: MessageView | null;
   setReplyingTo: (message: MessageView | null) => void;
   editing: MessageView | null;
@@ -82,7 +87,16 @@ export function ConversationProvider({ conversation, me, initialPage, children }
   const [presence, setPresence] = useState(conversation.presence);
   const [replyingTo, setReplyingTo] = useState<MessageView | null>(null);
   const [editing, setEditing] = useState<MessageView | null>(null);
-  const typingLabel = "";
+  const { typists, add: addTypist, remove: removeTypist } = useTypists();
+  const typingLabel = labelFor(typists, conversation.kind === "direct");
+  const lastTypingSignal = useRef(0);
+
+  function signalTyping() {
+    const now = Date.now();
+    if (now - lastTypingSignal.current < typingThrottleMs) return;
+    lastTypingSignal.current = now;
+    sendTypingSignal(conversation.id);
+  }
 
   const cursor = state.nextCursor;
   const loadOlder = useCallback(() => {
@@ -117,9 +131,19 @@ export function ConversationProvider({ conversation, me, initialPage, children }
       refreshLatest();
       return;
     }
+    if (event.type === "presence") {
+      if (event.data.userId === conversation.peer?.id && conversation.blocked === "none") {
+        setPresence({ online: event.data.online, lastSeenAt: event.data.lastSeenAt ?? presence?.lastSeenAt ?? null });
+      }
+      return;
+    }
     if (!("conversationId" in event.data) || event.data.conversationId !== conversation.id) return;
     switch (event.type) {
+      case "typing":
+        if (event.data.userId !== me.id) addTypist(event.data);
+        break;
       case "message.created":
+        if (event.data.senderId) removeTypist(event.data.senderId);
         if (!event.data.threadRootId) refreshMessage(event.data.messageId);
         break;
       case "message.updated":
@@ -231,6 +255,8 @@ export function ConversationProvider({ conversation, me, initialPage, children }
         presence,
         setPresence,
         typingLabel,
+        typists,
+        signalTyping,
         replyingTo,
         setReplyingTo,
         editing,
