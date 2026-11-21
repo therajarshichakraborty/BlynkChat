@@ -7,16 +7,13 @@ import { RoomHeader } from "@/components/community/room-header";
 import { PinIcon } from "@/components/icons/pin-icon";
 import { UsersIcon } from "@/components/icons/users-icon";
 import { SidePanel, SidePanelProvider, SidePanelToggle } from "@/components/shell/side-panel";
-import { getRoomParams, getRoomView } from "@/lib/data/rooms";
+import { getRoomView } from "@/lib/data/rooms";
+import { requireUser } from "@/lib/server/session";
 import { getCurrentUser } from "@/lib/data/users";
 
 type RoomPageProps = {
   params: Promise<{ id: string; room: string }>;
 };
-
-export function generateStaticParams() {
-  return getRoomParams();
-}
 
 export async function generateMetadata({ params }: RoomPageProps): Promise<Metadata> {
   const { id, room } = await params;
@@ -30,6 +27,7 @@ export async function generateMetadata({ params }: RoomPageProps): Promise<Metad
 }
 
 export default async function RoomPage({ params }: RoomPageProps) {
+  await requireUser();
   const { id, room } = await params;
   const view = getRoomView(id, room);
   if (!view) notFound();

@@ -13,6 +13,7 @@ import {
   searchCommunities,
 } from "@/lib/data/communities";
 import { communityCategories, exploreHref, parseCategory } from "@/lib/utils/community-links";
+import { requireUser } from "@/lib/server/session";
 
 export const metadata: Metadata = {
   title: "Explore communities",
@@ -24,6 +25,7 @@ type CommunitiesPageProps = {
 };
 
 export default async function CommunitiesPage({ searchParams }: CommunitiesPageProps) {
+  await requireUser();
   const params = await searchParams;
   const category = parseCategory(params.category);
   const query = params.q?.trim() ?? "";

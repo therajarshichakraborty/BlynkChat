@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { CreateGroupWizard } from "@/components/group/create-group-wizard";
 import { getContacts } from "@/lib/data/users";
+import { requireUser } from "@/lib/server/session";
 
 export const metadata: Metadata = {
   title: "Create a group",
   description: "Create a new Relay group with up to 1,024 members.",
 };
 
-export default function CreateGroupPage() {
+export default async function CreateGroupPage() {
+  await requireUser();
   return (
     <main id="main" className="flex flex-1 items-start justify-center overflow-y-auto bg-surface md:items-center md:p-8">
       <section

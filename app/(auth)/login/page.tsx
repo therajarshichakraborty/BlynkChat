@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthCard } from "@/components/auth/auth-card";
 import { LoginForm } from "@/components/auth/login-form";
+import { safeRedirect } from "@/lib/utils/safe-redirect";
 
 export const metadata: Metadata = {
   title: "Log in",
@@ -9,11 +10,11 @@ export const metadata: Metadata = {
 };
 
 type LoginPageProps = {
-  searchParams: Promise<{ reset?: string }>;
+  searchParams: Promise<{ reset?: string; next?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { reset } = await searchParams;
+  const { reset, next } = await searchParams;
 
   return (
     <AuthCard
@@ -33,7 +34,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           Your password was updated. Log in with your new password.
         </p>
       ) : null}
-      <LoginForm />
+      <LoginForm redirectTo={safeRedirect(next)} />
     </AuthCard>
   );
 }

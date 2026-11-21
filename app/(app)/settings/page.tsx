@@ -7,13 +7,15 @@ import { ToggleRow } from "@/components/settings/toggle-row";
 import { Avatar } from "@/components/ui/avatar";
 import { ButtonLink } from "@/components/ui/button-link";
 import { getCurrentUser } from "@/lib/data/users";
+import { requireUser } from "@/lib/server/session";
 
 export const metadata: Metadata = {
   title: "Settings",
   description: "Manage your Relay profile, theme, notifications and privacy.",
 };
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  await requireUser();
   const user = getCurrentUser();
 
   return (

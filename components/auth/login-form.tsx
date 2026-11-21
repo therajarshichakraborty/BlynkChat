@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
@@ -7,7 +8,6 @@ import { PasswordField } from "@/components/ui/password-field";
 import { TextField } from "@/components/ui/text-field";
 import { authClient } from "@/lib/auth-client";
 import { signInErrorMessage } from "@/lib/auth-errors";
-import { afterAuthRoute } from "@/lib/site";
 import { loginSchema, type LoginValues } from "@/lib/validation/auth";
 import { collectFieldErrors, type FieldErrors } from "@/lib/validation/form";
 import { FormAlert } from "./form-alert";
@@ -19,7 +19,11 @@ function signInWith({ identifier, password }: LoginValues) {
     : authClient.signIn.username({ username: identifier.toLowerCase(), password });
 }
 
-export function LoginForm() {
+type LoginFormProps = {
+  redirectTo: Route;
+};
+
+export function LoginForm({ redirectTo }: LoginFormProps) {
   const router = useRouter();
   const [values, setValues] = useState<LoginValues>({ identifier: "", password: "" });
   const [errors, setErrors] = useState<FieldErrors<LoginValues>>({});
@@ -46,7 +50,7 @@ export function LoginForm() {
         setFormError(signInErrorMessage(error));
         return;
       }
-      router.replace(afterAuthRoute);
+      router.replace(redirectTo);
       router.refresh();
     });
   }

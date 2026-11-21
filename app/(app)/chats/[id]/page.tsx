@@ -4,17 +4,14 @@ import { ChatHeader } from "@/components/chat/chat-header";
 import { Conversation } from "@/components/chat/conversation";
 import { ProfilePanel } from "@/components/chat/profile-panel";
 import { SidePanel, SidePanelProvider, SidePanelToggle } from "@/components/shell/side-panel";
-import { getChat, getChatIds, getChatThread } from "@/lib/data/chats";
+import { getChat, getChatThread } from "@/lib/data/chats";
+import { requireUser } from "@/lib/server/session";
 import { getCurrentUser } from "@/lib/data/users";
 import type { ChatThread } from "@/types/chat";
 
 type ChatPageProps = {
   params: Promise<{ id: string }>;
 };
-
-export function generateStaticParams() {
-  return getChatIds().map((id) => ({ id }));
-}
 
 export async function generateMetadata({ params }: ChatPageProps): Promise<Metadata> {
   const { id } = await params;
@@ -32,6 +29,7 @@ function subtitleFor({ chat, peer }: ChatThread) {
 }
 
 export default async function ChatPage({ params }: ChatPageProps) {
+  await requireUser();
   const { id } = await params;
   const thread = getChatThread(id);
   if (!thread) notFound();

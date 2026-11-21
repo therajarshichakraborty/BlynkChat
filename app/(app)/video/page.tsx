@@ -10,6 +10,7 @@ import { VideoIcon } from "@/components/icons/video-icon";
 import { VideoTile } from "@/components/landing/video-tile";
 import { IconLink } from "@/components/ui/icon-link";
 import { Tag } from "@/components/ui/tag";
+import { requireUser } from "@/lib/server/session";
 
 export const metadata: Metadata = {
   title: "Video calls coming soon",
@@ -22,7 +23,8 @@ const features = [
   { icon: CaptionsIcon, label: "Live captions" },
 ];
 
-export default function VideoSoonPage() {
+export default async function VideoSoonPage() {
+  await requireUser();
   return (
     <main
       id="main"
