@@ -3,6 +3,7 @@ import { GlobeIcon } from "@/components/icons/globe-icon";
 import { HashIcon } from "@/components/icons/hash-icon";
 import { MessageCircleIcon } from "@/components/icons/message-circle-icon";
 import { PhoneIcon } from "@/components/icons/phone-icon";
+import { SettingsIcon } from "@/components/icons/settings-icon";
 import { StarIcon } from "@/components/icons/star-icon";
 import { UsersIcon } from "@/components/icons/users-icon";
 import { Avatar } from "@/components/ui/avatar";
@@ -54,9 +55,12 @@ export function Rail() {
       </NavLink>
       <div className="mt-auto flex flex-col items-center gap-2">
         <ThemeToggle className="size-11" />
-        <span className="mt-1 rounded-full" title={user.name}>
-          <Avatar initials={user.initials} tone={user.tone} size="md" online label={user.name} />
-        </span>
+        <NavLink href="/settings" match="/settings" label="Settings" variant="rail">
+          <SettingsIcon size={22} />
+        </NavLink>
+        <Link href="/settings" aria-label={`${user.name}, profile settings`} className="mt-1 rounded-full">
+          <Avatar initials={user.initials} tone={user.tone} size="md" online />
+        </Link>
       </div>
     </nav>
   );

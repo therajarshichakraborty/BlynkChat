@@ -23,9 +23,9 @@ export function TabBar() {
       <SoonTab label="Calls">
         <PhoneIcon size={22} />
       </SoonTab>
-      <SoonTab label="Settings">
+      <NavLink href="/settings" match="/settings" label="Settings" variant="tab">
         <SettingsIcon size={22} />
-      </SoonTab>
+      </NavLink>
     </TabBarFrame>
   );
 }
