@@ -4,6 +4,7 @@ import { HashIcon } from "@/components/icons/hash-icon";
 import { MessageCircleIcon } from "@/components/icons/message-circle-icon";
 import { PhoneIcon } from "@/components/icons/phone-icon";
 import { StarIcon } from "@/components/icons/star-icon";
+import { UsersIcon } from "@/components/icons/users-icon";
 import { Avatar } from "@/components/ui/avatar";
 import { LogoMark } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -33,6 +34,9 @@ export function Rail() {
         variant="rail"
       >
         <HashIcon size={22} />
+      </NavLink>
+      <NavLink href="/groups/new" match="/groups" label="New group" variant="rail">
+        <UsersIcon size={22} />
       </NavLink>
       <NavLink href="/communities" match="/communities" label="Communities" variant="rail" exact>
         <GlobeIcon size={22} />

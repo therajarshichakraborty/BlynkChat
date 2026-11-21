@@ -1,5 +1,6 @@
 import type { Route } from "next";
 import { FilterIcon } from "@/components/icons/filter-icon";
+import { SquarePenIcon } from "@/components/icons/square-pen-icon";
 import { IconLink } from "@/components/ui/icon-link";
 import { chatListQuery } from "@/lib/utils/chat-filters";
 import { cn } from "@/lib/utils/cn";
@@ -23,6 +24,9 @@ export function ChatListHeader({ filter, pathname, query }: ChatListHeaderProps)
         className={cn("ml-auto", unreadOnly && "bg-accent-soft text-accent-text")}
       >
         <FilterIcon size={19} />
+      </IconLink>
+      <IconLink href="/groups/new" label="New group" variant="outline">
+        <SquarePenIcon size={19} />
       </IconLink>
     </div>
   );
