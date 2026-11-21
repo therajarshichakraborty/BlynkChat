@@ -7,7 +7,6 @@ import { FileTextIcon } from "@/components/icons/file-text-icon";
 import { PhoneIcon } from "@/components/icons/phone-icon";
 import { VideoIcon } from "@/components/icons/video-icon";
 import { Avatar } from "@/components/ui/avatar";
-import { Tag } from "@/components/ui/tag";
 import { formatBytes } from "@/lib/utils/time";
 import type { ConversationDetails, ConversationView } from "@/types/conversation";
 import { ProfileAction } from "./profile-action";
@@ -17,9 +16,10 @@ type ProfilePanelProps = {
   details: ConversationDetails;
   muteAction?: ReactNode;
   children?: ReactNode;
+  footer?: ReactNode;
 };
 
-export function ProfilePanel({ conversation, details, muteAction, children }: ProfilePanelProps) {
+export function ProfilePanel({ conversation, details, muteAction, children, footer }: ProfilePanelProps) {
   const { peer } = conversation;
   const subtitle = peer
     ? [peer.title, peer.location].filter(Boolean).join(" · ") || `@${peer.username}`
@@ -29,7 +29,7 @@ export function ProfilePanel({ conversation, details, muteAction, children }: Pr
   return (
     <div className="flex flex-col">
       <section className="flex flex-col items-center px-6 pt-8 pb-6 text-center">
-        <Avatar initials={conversation.initials} tone={conversation.tone} size="2xl" />
+        <Avatar initials={conversation.initials} tone={conversation.tone} image={conversation.image} size="2xl" />
         <h2 className="mt-4 text-xl font-semibold tracking-tight">{conversation.title}</h2>
         {subtitle ? <p className="mt-0.5 text-sm text-muted">{subtitle}</p> : null}
         {about ? <p className="mt-3 text-base">{about}</p> : null}
@@ -109,25 +109,7 @@ export function ProfilePanel({ conversation, details, muteAction, children }: Pr
           </ul>
         </section>
       ) : null}
-      {conversation.kind !== "direct" && details.members.length > 0 ? (
-        <section aria-labelledby="members-heading" className="border-t border-line px-6 py-6">
-          <h3 id="members-heading" className="text-md font-semibold">
-            {conversation.memberCount} members
-          </h3>
-          <ul className="mt-3 flex flex-col gap-1">
-            {details.members.map((member) => (
-              <li key={member.person.id} className="flex items-center gap-3 py-1.5">
-                <Avatar initials={member.person.initials} tone={member.person.tone} size="md" online={member.online} />
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-base font-medium">{member.person.name}</span>
-                  <span className="truncate text-xs text-muted">@{member.person.username}</span>
-                </span>
-                {member.role !== "member" ? <Tag>{member.role}</Tag> : null}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      {footer}
     </div>
   );
 }

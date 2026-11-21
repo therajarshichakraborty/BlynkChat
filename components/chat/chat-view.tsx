@@ -5,6 +5,7 @@ import { getProfile } from "@/lib/data/users";
 import { ChatHeader } from "./chat-header";
 import { Conversation } from "./conversation";
 import { ConversationProvider } from "./conversation-provider";
+import { GroupManage } from "@/components/group/group-manage";
 import { ProfilePanel } from "./profile-panel";
 
 type ChatViewProps = {
@@ -34,7 +35,22 @@ export async function ChatView({ userId, conversationId }: ChatViewProps) {
             <Conversation />
           </section>
           <SidePanel label={panelLabel}>
-            <ProfilePanel conversation={conversation} details={details} />
+            <ProfilePanel
+              conversation={conversation}
+              details={details}
+              footer={
+                conversation.kind === "group" ? (
+                  <GroupManage
+                    conversationId={conversation.id}
+                    meId={me.id}
+                    myRole={conversation.myRole}
+                    members={details.members}
+                    memberCount={conversation.memberCount}
+                    inviteCode={conversation.inviteCode}
+                  />
+                ) : null
+              }
+            />
           </SidePanel>
         </main>
       </ConversationProvider>

@@ -33,7 +33,7 @@ export function ChatListItem({ chat, active, search, typingLabel }: ChatListItem
           active ? "border-line bg-card shadow-sm" : "border-transparent hover:bg-raised/70",
         )}
       >
-        <Avatar initials={chat.initials} tone={chat.tone} size="lg" online={chat.online} />
+        <Avatar initials={chat.initials} tone={chat.tone} image={chat.image} size="lg" online={chat.online} />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex items-center gap-2">
             <span className="truncate text-md font-medium">{chat.title}</span>

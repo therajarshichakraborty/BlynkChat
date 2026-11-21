@@ -99,3 +99,14 @@ export type ConversationDetails = {
   commonGroups: GroupLink[];
   members: MemberView[];
 };
+
+export type InvitePreview = {
+  conversationId: string;
+  title: string;
+  description: string;
+  tone: Tone;
+  image: string | null;
+  memberCount: number;
+  requireApproval: boolean;
+  status: "member" | "pending" | "none";
+};

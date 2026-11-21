@@ -65,7 +65,7 @@ export function MessageBubble({
       )}
     >
       {!outgoing && author ? (
-        <Avatar initials={author.initials} tone={author.tone} size="md" className="mt-0.5" />
+        <Avatar initials={author.initials} tone={author.tone} image={author.image} size="md" className="mt-0.5" />
       ) : null}
       {outgoing ? actions : null}
       <div

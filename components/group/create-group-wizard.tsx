@@ -1,7 +1,9 @@
 "use client";
 
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import { FormAlert } from "@/components/auth/form-alert";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { LockIcon } from "@/components/icons/lock-icon";
 import { UsersIcon } from "@/components/icons/users-icon";
@@ -10,15 +12,17 @@ import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
 import { Spinner } from "@/components/ui/spinner";
 import { Stepper } from "@/components/ui/stepper";
-import { createGroup } from "@/lib/data/groups";
+import { createGroup } from "@/lib/actions/groups";
+import { imageSize, uploadFile } from "@/lib/uploads-client";
 import { cn } from "@/lib/utils/cn";
-import type { User } from "@/types/user";
+import { imageAccept } from "@/lib/validation/uploads";
+import type { PersonView } from "@/types/conversation";
 import { GroupDetailsStep, type GroupSettings } from "./group-details-step";
 import { GroupMembersStep } from "./group-members-step";
 import { GroupPrivacyStep, type GroupVisibility } from "./group-privacy-step";
 
 type CreateGroupWizardProps = {
-  contacts: User[];
+  contacts: PersonView[];
   mode: "modal" | "page";
 };
 
@@ -26,6 +30,7 @@ const steps = ["Details", "Members", "Privacy"];
 
 export function CreateGroupWizard({ contacts, mode }: CreateGroupWizardProps) {
   const router = useRouter();
+  const imageInput = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -36,7 +41,9 @@ export function CreateGroupWizard({ contacts, mode }: CreateGroupWizardProps) {
   });
   const [selected, setSelected] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<GroupVisibility>("private");
-  const [errors, setErrors] = useState<{ name?: string; members?: string }>({});
+  const [image, setImage] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; members?: string; form?: string }>({});
   const [pending, startTransition] = useTransition();
 
   function close() {
@@ -49,6 +56,14 @@ export function CreateGroupWizard({ contacts, mode }: CreateGroupWizardProps) {
     setSelected((current) =>
       current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
     );
+  }
+
+  async function pickImage(file: File) {
+    setUploadingImage(true);
+    const result = await uploadFile(file, "image", await imageSize(file));
+    setUploadingImage(false);
+    if (result.ok) setImage(result.data.url);
+    else setErrors((current) => ({ ...current, form: result.error.message }));
   }
 
   function next() {
@@ -66,8 +81,22 @@ export function CreateGroupWizard({ contacts, mode }: CreateGroupWizardProps) {
       return;
     }
     startTransition(async () => {
-      await createGroup({ name: name.trim(), description, memberIds: selected, visibility, ...settings });
-      close();
+      const result = await createGroup({
+        name: name.trim(),
+        description: description.trim(),
+        memberIds: selected,
+        visibility,
+        image,
+        ...settings,
+      });
+      if (!result.ok) {
+        const fields = result.error.fields ?? {};
+        if (fields.name) setStep(0);
+        else if (fields.memberIds || fields.members) setStep(1);
+        setErrors({ name: fields.name, members: fields.memberIds ?? fields.members, form: result.error.message });
+        return;
+      }
+      router.replace(`/chats/${result.data.id}` as Route);
     });
   }
 
@@ -75,6 +104,17 @@ export function CreateGroupWizard({ contacts, mode }: CreateGroupWizardProps) {
 
   return (
     <div className="flex max-h-[calc(100dvh-32px)] flex-col">
+      <input
+        ref={imageInput}
+        type="file"
+        accept={imageAccept}
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void pickImage(file);
+          event.target.value = "";
+        }}
+      />
       <header className="flex items-start gap-4 border-b border-line px-5 py-5 md:px-8 md:py-6">
         <span className="inline-grid size-12 shrink-0 place-items-center rounded-lg border border-accent-line bg-accent-soft text-accent-text">
           <UsersIcon size={22} />
@@ -93,6 +133,11 @@ export function CreateGroupWizard({ contacts, mode }: CreateGroupWizardProps) {
         <Stepper steps={steps} current={step} />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
+        {errors.form ? (
+          <div className="px-5 pt-5 md:px-8">
+            <FormAlert message={errors.form} />
+          </div>
+        ) : null}
         {step === 2 ? (
           <div className="px-5 py-6 md:px-8">
             <GroupPrivacyStep
@@ -109,6 +154,9 @@ export function CreateGroupWizard({ contacts, mode }: CreateGroupWizardProps) {
                 description={description}
                 settings={settings}
                 nameError={errors.name}
+                image={image}
+                uploadingImage={uploadingImage}
+                onPickImage={() => imageInput.current?.click()}
                 onName={(value) => {
                   setName(value);
                   setErrors((current) => ({ ...current, name: undefined }));
@@ -144,7 +192,13 @@ export function CreateGroupWizard({ contacts, mode }: CreateGroupWizardProps) {
         >
           {step === 0 ? "Cancel" : "Back"}
         </Button>
-        <Button shape="rounded" onClick={next} disabled={pending} aria-busy={pending} className="max-sm:flex-1">
+        <Button
+          shape="rounded"
+          onClick={next}
+          disabled={pending || uploadingImage}
+          aria-busy={pending}
+          className="max-sm:flex-1"
+        >
           {pending ? <Spinner /> : null}
           {last ? "Create group" : `Next: ${steps[step + 1]}`}
           {!pending ? <ArrowRightIcon size={17} /> : null}

@@ -153,6 +153,12 @@ export async function authorizeFile(userId: string, attachmentId: string) {
     return attachment;
   }
 
-  if (attachment.uploaderId !== userId) throw notFound("That file could not be found.");
+  if (attachment.uploaderId === userId) return attachment;
+  const url = `/api/files/${attachment.id}`;
+  const [profiles, groups] = await Promise.all([
+    db.user.count({ where: { image: url } }),
+    db.conversation.count({ where: { image: url, members: { some: { userId, leftAt: null } } } }),
+  ]);
+  if (profiles + groups === 0) throw notFound("That file could not be found.");
   return attachment;
 }

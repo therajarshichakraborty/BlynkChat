@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils/cn";
 import { toneGradient } from "@/lib/utils/tone";
 import type { Tone } from "@/types/tone";
@@ -7,6 +8,7 @@ type AvatarSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
 type AvatarProps = {
   initials: string;
   tone: Tone;
+  image?: string | null;
   size?: AvatarSize;
   shape?: "circle" | "square";
   online?: boolean;
@@ -23,6 +25,8 @@ const sizeClasses: Record<AvatarSize, string> = {
   xl: "size-14 text-lg",
   "2xl": "size-22 text-3xl",
 };
+
+const pixelSizes: Record<AvatarSize, number> = { xs: 20, sm: 28, md: 36, lg: 44, xl: 56, "2xl": 88 };
 
 const squareRadius: Record<AvatarSize, string> = {
   xs: "rounded-[5px]",
@@ -45,6 +49,7 @@ const dotClasses: Record<AvatarSize, string> = {
 export function Avatar({
   initials,
   tone,
+  image,
   size = "md",
   shape = "circle",
   online = false,
@@ -52,6 +57,7 @@ export function Avatar({
   label,
   className,
 }: AvatarProps) {
+  const shapeClass = shape === "circle" ? "rounded-full" : squareRadius[size];
   return (
     <span
       className={cn("relative inline-flex shrink-0", className)}
@@ -59,17 +65,28 @@ export function Avatar({
       aria-label={label}
       aria-hidden={label ? undefined : true}
     >
-      <span
-        className={cn(
-          "inline-grid place-items-center font-semibold tracking-tight text-white select-none",
-          toneGradient(tone),
-          sizeClasses[size],
-          shape === "circle" ? "rounded-full" : squareRadius[size],
-          ring && "ring-2 ring-bg",
-        )}
-      >
-        {initials}
-      </span>
+      {image ? (
+        <Image
+          src={image}
+          alt=""
+          width={pixelSizes[size]}
+          height={pixelSizes[size]}
+          unoptimized
+          className={cn("object-cover", sizeClasses[size], shapeClass, ring && "ring-2 ring-bg")}
+        />
+      ) : (
+        <span
+          className={cn(
+            "inline-grid place-items-center font-semibold tracking-tight text-white select-none",
+            toneGradient(tone),
+            sizeClasses[size],
+            shapeClass,
+            ring && "ring-2 ring-bg",
+          )}
+        >
+          {initials}
+        </span>
+      )}
       {online ? (
         <span
           className={cn(

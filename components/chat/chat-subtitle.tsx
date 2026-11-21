@@ -13,7 +13,13 @@ function memberLabel(count: number) {
 export function ChatHeaderAvatar() {
   const { conversation, presence } = useConversation();
   return (
-    <Avatar initials={conversation.initials} tone={conversation.tone} size="lg" online={presence?.online ?? false} />
+    <Avatar
+      initials={conversation.initials}
+      tone={conversation.tone}
+      image={conversation.image}
+      size="lg"
+      online={presence?.online ?? false}
+    />
   );
 }
 

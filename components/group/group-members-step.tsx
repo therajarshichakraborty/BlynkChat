@@ -3,11 +3,11 @@ import { Avatar } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SearchInput } from "@/components/ui/search-input";
 import { Tag } from "@/components/ui/tag";
-import type { User } from "@/types/user";
+import type { PersonView } from "@/types/conversation";
 import { MemberChip } from "./member-chip";
 
 type GroupMembersStepProps = {
-  contacts: User[];
+  contacts: PersonView[];
   selected: string[];
   error?: string;
   onToggle: (id: string) => void;
@@ -16,7 +16,9 @@ type GroupMembersStepProps = {
 export function GroupMembersStep({ contacts, selected, error, onToggle }: GroupMembersStepProps) {
   const [query, setQuery] = useState("");
   const needle = query.trim().toLowerCase();
-  const visible = contacts.filter((user) => !needle || user.name.toLowerCase().includes(needle));
+  const visible = contacts.filter(
+    (user) => !needle || user.name.toLowerCase().includes(needle) || user.username.includes(needle),
+  );
   const chosen = contacts.filter((user) => selected.includes(user.id));
 
   return (
@@ -47,17 +49,19 @@ export function GroupMembersStep({ contacts, selected, error, onToggle }: GroupM
         {visible.map((user) => (
           <li key={user.id}>
             <label className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors duration-150 hover:bg-surface">
-              <Avatar initials={user.initials} tone={user.tone} size="lg" online={user.online} />
+              <Avatar initials={user.initials} tone={user.tone} image={user.image} size="lg" />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-md font-medium">{user.name}</span>
-                <span className="truncate text-sm text-muted">{user.title}</span>
+                <span className="truncate text-sm text-muted">{user.title || `@${user.username}`}</span>
               </span>
               <Checkbox checked={selected.includes(user.id)} onChange={() => onToggle(user.id)} />
             </label>
           </li>
         ))}
         {visible.length === 0 ? (
-          <li className="px-2 py-6 text-center text-sm text-muted">No contacts match “{query}”.</li>
+          <li className="px-2 py-6 text-center text-sm text-muted">
+            {contacts.length === 0 ? "Start a chat with someone first to add them to a group." : `No contacts match “${query}”.`}
+          </li>
         ) : null}
       </ul>
     </div>

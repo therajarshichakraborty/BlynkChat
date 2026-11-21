@@ -10,10 +10,11 @@ export const metadata: Metadata = {
 };
 
 export default async function CreateGroupModal() {
-  await requireUser();
+  const user = await requireUser();
+  const contacts = await getContacts(user.id);
   return (
     <Modal labelledBy="create-group-title">
-      <CreateGroupWizard contacts={getContacts()} mode="modal" />
+      <CreateGroupWizard contacts={contacts} mode="modal" />
     </Modal>
   );
 }

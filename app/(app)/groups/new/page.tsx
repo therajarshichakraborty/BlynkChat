@@ -9,14 +9,15 @@ export const metadata: Metadata = {
 };
 
 export default async function CreateGroupPage() {
-  await requireUser();
+  const user = await requireUser();
+  const contacts = await getContacts(user.id);
   return (
     <main id="main" className="flex flex-1 items-start justify-center overflow-y-auto bg-surface md:items-center md:p-8">
       <section
         aria-labelledby="create-group-title"
         className="w-full max-w-200 overflow-hidden border-line bg-card md:rounded-[24px] md:border md:shadow-lg"
       >
-        <CreateGroupWizard contacts={getContacts()} mode="page" />
+        <CreateGroupWizard contacts={contacts} mode="page" />
       </section>
     </main>
   );

@@ -1,4 +1,6 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { CameraIcon } from "@/components/icons/camera-icon";
 import { MegaphoneIcon } from "@/components/icons/megaphone-icon";
 import { ShieldCheckIcon } from "@/components/icons/shield-check-icon";
@@ -23,6 +25,9 @@ type GroupDetailsStepProps = {
   onName: (value: string) => void;
   onDescription: (value: string) => void;
   onSetting: (key: keyof GroupSettings, value: boolean) => void;
+  image: string | null;
+  uploadingImage: boolean;
+  onPickImage: () => void;
 };
 
 const groupNameLimit = 48;
@@ -51,26 +56,35 @@ export function GroupDetailsStep({
   onName,
   onDescription,
   onSetting,
+  image,
+  uploadingImage,
+  onPickImage,
 }: GroupDetailsStepProps) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-4">
         <span className="relative">
-          <span
-            aria-hidden="true"
-            className={cn(
-              "inline-grid size-18 place-items-center rounded-xl text-2xl font-semibold text-white shadow-accent",
-              toneGradient("blue"),
-            )}
-          >
-            {initialsFor(name)}
-          </span>
+          {image ? (
+            <Image src={image} alt="" width={72} height={72} unoptimized className="size-18 rounded-xl object-cover shadow-accent" />
+          ) : (
+            <span
+              aria-hidden="true"
+              className={cn(
+                "inline-grid size-18 place-items-center rounded-xl text-2xl font-semibold text-white shadow-accent",
+                toneGradient("blue"),
+              )}
+            >
+              {initialsFor(name)}
+            </span>
+          )}
           <button
             type="button"
+            onClick={onPickImage}
+            disabled={uploadingImage}
             aria-label="Upload group icon"
             className="absolute -right-1.5 -bottom-1.5 inline-grid size-8 place-items-center rounded-full border border-line bg-card text-fg shadow-sm hover:bg-surface"
           >
-            <CameraIcon size={15} />
+            {uploadingImage ? <Spinner className="size-3.5" /> : <CameraIcon size={15} />}
           </button>
         </span>
         <div>
