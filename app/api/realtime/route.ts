@@ -1,5 +1,6 @@
 import { hub } from "@/lib/server/realtime/hub";
 import { markDisconnected, markOnline } from "@/lib/server/services/presence";
+import { purgeExpiredMessages } from "@/lib/server/services/group-settings";
 import { markAllDelivered, noteDelivered } from "@/lib/server/services/receipts";
 import { getSessionUser } from "@/lib/server/session";
 import type { RealtimeEvent } from "@/types/realtime";
@@ -63,6 +64,7 @@ export async function GET(request: Request) {
         },
       });
       void markAllDelivered(user.id).catch((error: unknown) => console.error("[relay:receipts]", error));
+      void purgeExpiredMessages().catch((error: unknown) => console.error("[relay:purge]", error));
       void markOnline(user.id, hub.connectionsFor(user.id) === 1).catch((error: unknown) =>
         console.error("[relay:presence]", error),
       );

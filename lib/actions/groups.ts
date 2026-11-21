@@ -13,8 +13,12 @@ import {
   setMemberRole,
   transferOwnership as transferOwnershipService,
 } from "@/lib/server/services/groups";
+import { decideJoinRequest, updateGroupSettings } from "@/lib/server/services/group-settings";
 import {
   createGroupSchema,
+  groupSettingsSchema,
+  joinDecisionSchema,
+  type GroupSettingsValues,
   inviteCodeSchema,
   memberSchema,
   membersSchema,
@@ -93,6 +97,26 @@ export async function resetInviteLink(input: { conversationId: string }) {
 export async function joinGroup(input: { code: string }) {
   return runAction(inviteCodeSchema, input, async (userId, data) => {
     const result = await joinByInvite(userId, data.code);
+    refreshChats();
+    return result;
+  });
+}
+
+export async function saveGroupSettings(input: GroupSettingsValues) {
+  return runAction(groupSettingsSchema, input, async (userId, data) => {
+    const { conversationId, disappearingSeconds, ...rest } = data;
+    const result = await updateGroupSettings(userId, conversationId, {
+      ...rest,
+      ...(disappearingSeconds === undefined ? {} : { disappearingSeconds: disappearingSeconds || null }),
+    });
+    refreshChats();
+    return result;
+  });
+}
+
+export async function answerJoinRequest(input: { requestId: string; approve: boolean }) {
+  return runAction(joinDecisionSchema, input, async (userId, data) => {
+    const result = await decideJoinRequest(userId, data.requestId, data.approve);
     refreshChats();
     return result;
   });

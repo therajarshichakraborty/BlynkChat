@@ -32,3 +32,25 @@ export const memberSchema = z.object({ conversationId: idSchema, userId: idSchem
 export const roleSchema = memberSchema.extend({ role: z.enum(["ADMIN", "MEMBER"]) });
 
 export const inviteCodeSchema = z.object({ code: z.string().trim().min(8).max(64) });
+
+export const disappearingOptions = [
+  { value: 0, label: "Off" },
+  { value: 24 * 60 * 60, label: "24 hours" },
+  { value: 7 * 24 * 60 * 60, label: "7 days" },
+] as const;
+
+export const groupSettingsSchema = z.object({
+  conversationId: idSchema,
+  title: z.string().trim().min(1, "Give your group a name.").max(groupNameLimit, `Use up to ${groupNameLimit} characters.`).optional(),
+  description: z.string().trim().max(groupDescriptionLimit, `Use up to ${groupDescriptionLimit} characters.`).optional(),
+  image: groupImageSchema.optional(),
+  onlyAdminsCanPost: z.boolean().optional(),
+  requireApproval: z.boolean().optional(),
+  disappearingSeconds: z
+    .union([z.literal(0), z.literal(24 * 60 * 60), z.literal(7 * 24 * 60 * 60)])
+    .optional(),
+});
+
+export type GroupSettingsValues = z.input<typeof groupSettingsSchema>;
+
+export const joinDecisionSchema = z.object({ requestId: idSchema, approve: z.boolean() });

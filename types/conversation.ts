@@ -110,3 +110,9 @@ export type InvitePreview = {
   requireApproval: boolean;
   status: "member" | "pending" | "none";
 };
+
+export type JoinRequestView = {
+  id: string;
+  person: PersonView;
+  createdAt: string;
+};
