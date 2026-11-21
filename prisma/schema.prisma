@@ -59,6 +59,11 @@ model User {
   createdChats    Conversation[]       @relation("ConversationCreator")
   joinRequests    JoinRequest[]        @relation("JoinRequester")
   decidedRequests JoinRequest[]        @relation("JoinRequestDecider")
+  attachments     Attachment[]
+  reactions       Reaction[]
+  starredMessages StarredMessage[]
+  pinnedMessages  PinnedMessage[]
+  pollVotes       PollVote[]
 
   @@map("user")
 }
@@ -187,6 +192,7 @@ model Conversation {
   members             ConversationMember[]
   messages            Message[]
   joinRequests        JoinRequest[]
+  pinnedMessages      PinnedMessage[]
 
   @@unique([communityId, slug])
   @@index([lastMessageAt])
@@ -238,28 +244,33 @@ model JoinRequest {
 }
 
 model Message {
-  id             String          @id @default(cuid())
-  conversationId String
-  conversation   Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderId       String?
-  sender         User?           @relation(fields: [senderId], references: [id], onDelete: SetNull)
-  kind           MessageKind     @default(TEXT)
-  body           String          @default("")
-  systemData     Json?
-  replyToId      String?
-  replyTo        Message?        @relation("MessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
-  replies        Message[]       @relation("MessageReply")
-  threadRootId   String?
-  threadRoot     Message?        @relation("MessageThread", fields: [threadRootId], references: [id], onDelete: Cascade)
-  threadReplies  Message[]       @relation("MessageThread")
-  forwarded      Boolean         @default(false)
-  editedAt       DateTime?
-  deletedAt      DateTime?
-  expiresAt      DateTime?
-  clientId       String
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  hiddenFor      MessageHidden[]
+  id              String           @id @default(cuid())
+  conversationId  String
+  conversation    Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId        String?
+  sender          User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  kind            MessageKind      @default(TEXT)
+  body            String           @default("")
+  systemData      Json?
+  replyToId       String?
+  replyTo         Message?         @relation("MessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies         Message[]        @relation("MessageReply")
+  threadRootId    String?
+  threadRoot      Message?         @relation("MessageThread", fields: [threadRootId], references: [id], onDelete: Cascade)
+  threadReplies   Message[]        @relation("MessageThread")
+  forwarded       Boolean          @default(false)
+  editedAt        DateTime?
+  deletedAt       DateTime?
+  expiresAt       DateTime?
+  clientId        String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  hiddenFor       MessageHidden[]
+  attachments     Attachment[]
+  reactions       Reaction[]
+  starredMessages StarredMessage[]
+  pinnedMessages  PinnedMessage[]
+  poll            Poll?
 
   @@unique([senderId, clientId])
   @@index([conversationId, createdAt(sort: Desc), id])
@@ -282,4 +293,125 @@ model MessageHidden {
   @@unique([messageId, userId])
   @@index([userId])
   @@map("message_hidden")
+}
+
+enum AttachmentKind {
+  IMAGE
+  FILE
+  VOICE
+}
+
+model Attachment {
+  id         String         @id @default(cuid())
+  messageId  String?
+  message    Message?       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  uploaderId String
+  uploader   User           @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  kind       AttachmentKind
+  mime       String
+  size       Int
+  name       String
+  path       String
+  width      Int?
+  height     Int?
+  durationMs Int?
+  waveform   Json?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([messageId])
+  @@index([uploaderId])
+  @@map("attachment")
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([messageId, userId, emoji])
+  @@index([userId])
+  @@map("reaction")
+}
+
+model StarredMessage {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("starred_message")
+}
+
+model PinnedMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  messageId      String
+  message        Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  pinnedById     String?
+  pinnedBy       User?        @relation(fields: [pinnedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([conversationId, messageId])
+  @@index([messageId])
+  @@index([pinnedById])
+  @@map("pinned_message")
+}
+
+model Poll {
+  id             String       @id @default(cuid())
+  messageId      String       @unique
+  message        Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  question       String
+  multipleChoice Boolean      @default(false)
+  closedAt       DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  options        PollOption[]
+  votes          PollVote[]
+
+  @@map("poll")
+}
+
+model PollOption {
+  id        String     @id @default(cuid())
+  pollId    String
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  label     String
+  position  Int
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  votes     PollVote[]
+
+  @@index([pollId])
+  @@map("poll_option")
+}
+
+model PollVote {
+  id        String     @id @default(cuid())
+  pollId    String
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId  String
+  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([optionId, userId])
+  @@index([pollId])
+  @@index([userId])
+  @@map("poll_vote")
 }
