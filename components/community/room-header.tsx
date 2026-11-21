@@ -14,7 +14,7 @@ type RoomHeaderProps = {
   topic: string;
   onlineLabel: string;
   sample: AvatarPerson[];
-  extra: string;
+  extra?: string;
   children?: ReactNode;
 };
 

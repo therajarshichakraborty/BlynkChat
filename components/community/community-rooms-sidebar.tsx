@@ -1,20 +1,21 @@
 import { GlobeIcon } from "@/components/icons/globe-icon";
-import { UserPlusIcon } from "@/components/icons/user-plus-icon";
+import { LockIcon } from "@/components/icons/lock-icon";
 import { VideoIcon } from "@/components/icons/video-icon";
 import { Avatar } from "@/components/ui/avatar";
-import { IconButton } from "@/components/ui/icon-button";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils/cn";
+import { compactCount } from "@/lib/utils/format";
 import { toneBanner } from "@/lib/utils/tone";
-import type { CommunityRoomView } from "@/types/community";
+import type { CommunityRoomPage } from "@/types/community";
+import { CopyInviteButton } from "./copy-invite-button";
 import { RoomList } from "./room-list";
 
 type CommunityRoomsSidebarProps = {
-  view: CommunityRoomView;
+  page: CommunityRoomPage;
 };
 
-export function CommunityRoomsSidebar({ view }: CommunityRoomsSidebarProps) {
-  const { community } = view;
+export function CommunityRoomsSidebar({ page }: CommunityRoomsSidebarProps) {
+  const { community } = page;
 
   return (
     <aside
@@ -22,10 +23,11 @@ export function CommunityRoomsSidebar({ view }: CommunityRoomsSidebarProps) {
       className="flex w-72 shrink-0 flex-col border-r border-line bg-surface max-md:hidden xl:w-80"
     >
       <div className="border-b border-line p-4">
-        <div aria-hidden="true" className={cn("h-24 rounded-lg", toneBanner("blue"))} />
+        <div aria-hidden="true" className={cn("h-24 rounded-lg", toneBanner(community.tone))} />
         <Avatar
           initials={community.initials}
           tone={community.tone}
+          image={community.image}
           size="xl"
           shape="square"
           className="-mt-10 ml-3 rounded-xl ring-4 ring-surface"
@@ -34,22 +36,15 @@ export function CommunityRoomsSidebar({ view }: CommunityRoomsSidebarProps) {
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-xl font-semibold tracking-tight">{community.name}</h2>
             <p className="flex items-center gap-1.5 text-sm text-muted">
-              <GlobeIcon size={14} />
-              Community · {community.memberCount} members
+              {community.visibility === "public" ? <GlobeIcon size={14} /> : <LockIcon size={14} />}
+              Community · {compactCount(community.memberCount)} members
             </p>
           </div>
-          <IconButton label={`Invite people to ${community.name}`} variant="outline">
-            <UserPlusIcon size={19} />
-          </IconButton>
+          <CopyInviteButton name={community.name} path={`/communities/${community.slug}/general`} />
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <RoomList
-          communityId={community.id}
-          activeRoom={view.room.id}
-          textRooms={view.textRooms}
-          voiceRooms={view.voiceRooms}
-        />
+        <RoomList communitySlug={community.slug} activeRoom={page.room.slug} rooms={page.rooms} />
       </div>
       <div className="p-4">
         <div className="rounded-lg border border-line bg-card p-4 shadow-xs">

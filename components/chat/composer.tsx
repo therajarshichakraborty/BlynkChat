@@ -72,10 +72,12 @@ export function Composer({
       {banner}
       {attachments}
       <div className="flex items-end gap-1 p-1.5 md:gap-1.5 md:p-2">
-        {leading ?? (
+        {leading === undefined ? (
           <IconButton label="Add attachment" className="max-sm:hidden">
             <PlusIcon size={20} />
           </IconButton>
+        ) : (
+          leading
         )}
         <label htmlFor={inputId} className="sr-only">
           {placeholder}
@@ -101,7 +103,7 @@ export function Composer({
           align="end"
           buttonClassName="size-10"
         />
-        {trailing ?? (
+        {trailing === undefined ? (
           <>
             <IconButton label="Attach file" className="max-sm:hidden">
               <PaperclipIcon size={20} />
@@ -110,6 +112,8 @@ export function Composer({
               <MicIcon size={20} />
             </IconButton>
           </>
+        ) : (
+          trailing
         )}
         <IconButton type="submit" label="Send message" variant="accent" disabled={empty || busy}>
           <SendIcon size={18} />

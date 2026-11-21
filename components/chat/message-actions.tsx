@@ -25,13 +25,14 @@ type MessageActionsProps = {
   outgoing: boolean;
   extraItems?: MenuItem[];
   leading?: ReactNode;
+  className?: string;
 };
 
 function within(createdAt: string, windowMs: number) {
   return Date.now() - Date.parse(createdAt) < windowMs;
 }
 
-export function MessageActions({ message, outgoing, extraItems = [], leading }: MessageActionsProps) {
+export function MessageActions({ message, outgoing, extraItems = [], leading, className }: MessageActionsProps) {
   const { conversation, setReplyingTo, setEditing, remove, retry, dispatch, notify, react, star, setForwarding } =
     useConversation();
   const admin = conversation.myRole !== "member" && conversation.kind !== "direct";
@@ -102,6 +103,7 @@ export function MessageActions({ message, outgoing, extraItems = [], leading }: 
       className={cn(
         "flex shrink-0 items-center gap-0.5 self-center opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 focus-within:opacity-100 has-[[aria-expanded=true]]:opacity-100 [@media(hover:none)]:opacity-100",
         outgoing && "flex-row-reverse",
+        className,
       )}
     >
       {leading}

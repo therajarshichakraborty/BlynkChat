@@ -4,10 +4,11 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
 import { cn } from "@/lib/utils/cn";
-import type { Community } from "@/types/community";
+import { compactCount } from "@/lib/utils/format";
+import type { CommunitySummary } from "@/types/community";
 
 type ExploreHeroProps = {
-  featured: Community[];
+  featured: CommunitySummary[];
   query: string;
 };
 
@@ -39,7 +40,7 @@ export function ExploreHero({ featured, query }: ExploreHeroProps) {
             label="Search all communities"
             name="q"
             size="lg"
-            placeholder="Search 40k+ communities"
+            placeholder="Search communities"
             defaultValue={query}
             className="min-w-0 flex-1 basis-64 bg-card"
           />
@@ -57,14 +58,14 @@ export function ExploreHero({ featured, query }: ExploreHeroProps) {
               offsets[index % offsets.length],
             )}
           >
-            <Avatar initials={community.initials} tone={community.tone} size="lg" shape="square" />
+            <Avatar initials={community.initials} tone={community.tone} image={community.image} size="lg" shape="square" />
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-md font-semibold">{community.name}</span>
               <span className="truncate text-sm text-muted">{community.highlight}</span>
             </span>
             <span className="inline-flex items-center gap-1 text-sm text-muted">
               <UsersIcon size={15} />
-              {community.memberCount}
+              {compactCount(community.memberCount)}
             </span>
           </li>
         ))}

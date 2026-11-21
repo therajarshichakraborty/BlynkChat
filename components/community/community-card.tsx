@@ -4,12 +4,13 @@ import { Avatar } from "@/components/ui/avatar";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { roomHref } from "@/lib/utils/community-links";
 import { cn } from "@/lib/utils/cn";
+import { compactCount } from "@/lib/utils/format";
 import { toneBanner } from "@/lib/utils/tone";
-import type { Community } from "@/types/community";
+import type { CommunitySummary } from "@/types/community";
 import { JoinButton } from "./join-button";
 
 type CommunityCardProps = {
-  community: Community;
+  community: CommunitySummary;
 };
 
 export function CommunityCard({ community }: CommunityCardProps) {
@@ -20,12 +21,13 @@ export function CommunityCard({ community }: CommunityCardProps) {
         <Avatar
           initials={community.initials}
           tone={community.tone}
+          image={community.image}
           size="xl"
           shape="square"
           className="-mt-8 self-start rounded-xl ring-4 ring-card"
         />
         <h3 className="mt-3 flex items-center gap-1.5 text-lg font-semibold tracking-tight">
-          <Link href={roomHref(community.id)} className="truncate hover:underline">
+          <Link href={roomHref(community.slug)} className="truncate hover:underline">
             {community.name}
           </Link>
           {community.verified ? (
@@ -35,9 +37,14 @@ export function CommunityCard({ community }: CommunityCardProps) {
         <p className="mt-1.5 line-clamp-2 text-base text-muted">{community.description}</p>
         <div className="mt-auto flex items-center gap-3 pt-5">
           <AvatarStack people={community.memberSample} size="sm" />
-          <span className="text-sm text-muted">{community.memberCount} members</span>
+          <span className="text-sm text-muted">{compactCount(community.memberCount)} members</span>
           <span className="ml-auto">
-            <JoinButton name={community.name} initiallyJoined={community.joined} />
+            <JoinButton
+              communityId={community.id}
+              slug={community.slug}
+              name={community.name}
+              initiallyJoined={community.joined}
+            />
           </span>
         </div>
       </div>

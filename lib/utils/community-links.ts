@@ -1,7 +1,7 @@
 import type { Route } from "next";
-import type { CommunityCategory } from "@/types/community";
+import type { CategoryView } from "@/types/community";
 
-type CategoryFilter = CommunityCategory | "for-you";
+export type CategoryFilter = CategoryView | "for-you";
 
 export const communityCategories: { value: CategoryFilter; label: string }[] = [
   { value: "for-you", label: "For you" },
@@ -26,6 +26,10 @@ export function exploreHref(category: CategoryFilter, query: string): Route {
   return (search ? `/communities?${search}` : "/communities") as Route;
 }
 
-export function roomHref(communityId: string, roomId = "general"): Route {
-  return `/communities/${communityId}/${roomId}` as Route;
+export function roomHref(communitySlug: string, roomSlug = "general"): Route {
+  return `/communities/${communitySlug}/${roomSlug}` as Route;
 }
+
+export const categoryOptions = communityCategories.filter(
+  (category): category is { value: CategoryView; label: string } => category.value !== "for-you",
+);

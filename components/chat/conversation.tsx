@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { MessageSquareTextIcon } from "@/components/icons/message-square-text-icon";
+import { RoomMessage } from "@/components/community/room-message";
+import { ThreadPanel } from "@/components/community/thread-panel";
 import { markRead } from "@/lib/actions/receipts";
 import { useTimeZone } from "@/components/shell/time-zone";
 import { Spinner } from "@/components/ui/spinner";
@@ -23,9 +26,25 @@ function firstUnread(messages: ThreadMessage[], lastReadAt: string | null, meId:
   return { id: unread[0]?.id ?? null, count: unread.length };
 }
 
-export function Conversation() {
-  const { conversation, me, state, messages, loadOlder, loadingOlder, typists, react, forwarding, setForwarding, notify } =
-    useConversation();
+type ConversationProps = {
+  variant?: "chat" | "room";
+};
+
+export function Conversation({ variant = "chat" }: ConversationProps) {
+  const {
+    conversation,
+    me,
+    state,
+    messages,
+    loadOlder,
+    loadingOlder,
+    typists,
+    typingLabel,
+    react,
+    forwarding,
+    setForwarding,
+    notify,
+  } = useConversation();
   const timeZone = useTimeZone();
   const scrollRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -33,6 +52,10 @@ export function Conversation() {
   const heightBeforeLoad = useRef<number | null>(null);
   const [unread] = useState(() => firstUnread(messages, conversation.lastReadAt, me.id));
   const [highlighted, setHighlighted] = useState<string | null>(null);
+  const [threadRootId, setThreadRootId] = useState<string | null>(null);
+  const threadRoot = threadRootId ? messages.find((message) => message.id === threadRootId) : undefined;
+  const closeThread = useCallback(() => setThreadRootId(null), []);
+  const room = variant === "room";
   const firstId = messages[0]?.id;
   const last = messages.at(-1);
   const lastKey = last ? (last.clientId ?? last.id) : undefined;
@@ -118,6 +141,36 @@ export function Conversation() {
 
   function renderMessage(message: ThreadMessage) {
     if (message.kind === "system") return <SystemMessage key={message.id} text={message.body} />;
+    if (room) {
+      const threadItems =
+        !message.deleted && !message.pending
+          ? [
+              {
+                label: "Reply in thread",
+                icon: <MessageSquareTextIcon size={16} />,
+                onSelect: () => setThreadRootId(message.id),
+              },
+            ]
+          : [];
+      return (
+        <RoomMessage
+          message={message}
+          timeZone={timeZone}
+          highlighted={highlighted === message.id}
+          onReplyClick={jumpTo}
+          onOpenThread={() => setThreadRootId(message.id)}
+          onToggleReaction={!message.pending ? (emoji) => react(message, emoji) : undefined}
+          actions={
+            <MessageActions
+              message={message}
+              outgoing={message.sender?.id === me.id}
+              extraItems={threadItems}
+              className="rounded-md border border-line bg-card px-0.5 shadow-sm"
+            />
+          }
+        />
+      );
+    }
     const outgoing = message.sender?.id === me.id;
     return (
       <MessageBubble
@@ -155,16 +208,32 @@ export function Conversation() {
             unreadCount={unread.count}
             unreadRef={unreadRef}
             renderMessage={renderMessage}
+            className={
+              room
+                ? "flex flex-col gap-6 px-4 py-5 md:px-8"
+                : "mx-auto flex w-full max-w-4xl flex-col gap-3 px-3 py-5 md:px-6"
+            }
           >
-            {typists[0] ? (
+            {typists[0] && !room ? (
               <TypingIndicator name={typists[0].name} initials={typists[0].initials} tone={typists[0].tone} />
             ) : null}
           </MessageList>
         )}
       </div>
-      <div className="px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))] md:px-6 md:pb-5">
+      <div className={room ? "px-3 pb-[max(12px,env(safe-area-inset-bottom))] md:px-8 md:pb-5" : "px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))] md:px-6 md:pb-5"}>
+        {room && typingLabel ? (
+          <p className="flex items-center gap-2 px-1 pb-2 text-sm text-muted" aria-live="polite">
+            <span aria-hidden="true" className="flex gap-0.5">
+              <span className="size-1.5 animate-pulse rounded-full bg-accent" />
+              <span className="size-1.5 animate-pulse rounded-full bg-accent [animation-delay:150ms]" />
+              <span className="size-1.5 animate-pulse rounded-full bg-accent [animation-delay:300ms]" />
+            </span>
+            {typingLabel}
+          </p>
+        ) : null}
         <ConversationComposer />
       </div>
+      {threadRoot ? <ThreadPanel key={threadRoot.id} root={threadRoot} onClose={closeThread} /> : null}
       {forwarding ? (
         <ForwardDialog messageId={forwarding.id} onClose={() => setForwarding(null)} onDone={notify} />
       ) : null}
